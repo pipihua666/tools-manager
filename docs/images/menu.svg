@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1164" height="812" viewBox="0 0 1164 812">
+  <rect width="1164" height="812" fill="#e9edf5"/>
+  <style>
+    .mono{font-family:"SFMono-Regular","Menlo","Consolas",monospace}
+    .muted{fill:#5f6268}
+    .amber{fill:#9b6100}
+    .green{fill:#466100}
+    .prompt{fill:#15803d;font-weight:700}
+    .cmd{fill:#6b66d8;font-weight:700}
+  </style>
+  <text x="10" y="13" class="mono prompt" font-size="18">➜ tm</text>
+
+  <rect x="16" y="27" width="791" height="64" rx="5" fill="none" stroke="#a7adb8" stroke-width="1.5"/>
+  <text x="31" y="55" class="mono green" font-size="18">Tools Manager</text>
+  <text x="31" y="76" class="mono muted" font-size="18">One local control plane for skills, presets, and MCP servers.</text>
+  <text x="11" y="139" class="mono muted" font-size="18">↑/↓ choose  Enter run  Esc/q quit</text>
+
+  <text x="11" y="202" class="mono amber" font-size="18">SYSTEM</text>
+  <rect x="11" y="207" width="809" height="20" fill="#caff44"/>
+  <text x="13" y="223" class="mono" font-size="18" fill="#111">› Status</text>
+  <text x="281" y="223" class="mono" font-size="18" fill="#111">Paths, counts, and detected agents.</text>
+  <text x="732" y="223" class="mono cmd" font-size="18">tm status</text>
+
+  <text x="11" y="265" class="mono amber" font-size="18">AGENTS</text>
+  <text x="31" y="286" class="mono muted" font-size="18">List agent contents</text>
+  <text x="281" y="286" class="mono muted" font-size="18">Show skills and MCP per agent.</text>
+  <text x="732" y="286" class="mono muted" font-size="18">tm agents list --tool</text>
+
+  <text x="11" y="328" class="mono amber" font-size="18">SKILLS</text>
+  <text x="31" y="349" class="mono muted" font-size="18">Add skill from source</text>
+  <text x="281" y="349" class="mono muted" font-size="18">Import a local path or Git URL.</text>
+  <text x="732" y="349" class="mono muted" font-size="18">tm skills add</text>
+  <text x="31" y="370" class="mono muted" font-size="18">Import agent skills</text>
+  <text x="281" y="370" class="mono muted" font-size="18">Choose an agent, defaulting to all.</text>
+  <text x="732" y="370" class="mono muted" font-size="18">tm skills add --tool</text>
+  <text x="31" y="391" class="mono muted" font-size="18">List skills</text>
+  <text x="281" y="391" class="mono muted" font-size="18">Browse the managed skill registry.</text>
+  <text x="732" y="391" class="mono muted" font-size="18">tm skills list</text>
+  <text x="31" y="412" class="mono muted" font-size="18">Show skill</text>
+  <text x="281" y="412" class="mono muted" font-size="18">Inspect one skill document.</text>
+  <text x="732" y="412" class="mono muted" font-size="18">tm skills show</text>
+  <text x="31" y="433" class="mono muted" font-size="18">Remove skill</text>
+  <text x="281" y="433" class="mono muted" font-size="18">Delete managed source and agent symlinks.</text>
+  <text x="732" y="433" class="mono muted" font-size="18">tm skills remove</text>
+  <text x="31" y="454" class="mono muted" font-size="18">Sync skills</text>
+  <text x="281" y="454" class="mono muted" font-size="18">Apply a preset to agents.</text>
+  <text x="732" y="454" class="mono muted" font-size="18">tm skills sync --tool</text>
+
+  <text x="11" y="496" class="mono amber" font-size="18">SKILL PRESETS</text>
+  <text x="31" y="517" class="mono muted" font-size="18">List skill presets</text>
+  <text x="281" y="517" class="mono muted" font-size="18">Show skill groups.</text>
+  <text x="732" y="517" class="mono muted" font-size="18">tm presets list</text>
+  <text x="31" y="538" class="mono muted" font-size="18">Move skill preset</text>
+  <text x="281" y="538" class="mono muted" font-size="18">Move membership between skill presets.</text>
+  <text x="732" y="538" class="mono muted" font-size="18">tm presets move</text>
+
+  <text x="11" y="580" class="mono amber" font-size="18">MCP</text>
+  <text x="31" y="601" class="mono muted" font-size="18">Add MCP server</text>
+  <text x="281" y="601" class="mono muted" font-size="18">Register command, args, env, and tools.</text>
+  <text x="732" y="601" class="mono muted" font-size="18">tm mcp add --command --arg --env --tool</text>
+  <text x="31" y="622" class="mono muted" font-size="18">Import MCP from agents</text>
+  <text x="281" y="622" class="mono muted" font-size="18">Choose an agent, defaulting to all.</text>
+  <text x="732" y="622" class="mono muted" font-size="18">tm mcp add --tool</text>
+  <text x="31" y="643" class="mono muted" font-size="18">List MCP servers</text>
+  <text x="281" y="643" class="mono muted" font-size="18">Browse the managed MCP registry.</text>
+  <text x="732" y="643" class="mono muted" font-size="18">tm mcp list</text>
+  <text x="31" y="664" class="mono muted" font-size="18">Show MCP server</text>
+  <text x="281" y="664" class="mono muted" font-size="18">Inspect one MCP server.</text>
+  <text x="732" y="664" class="mono muted" font-size="18">tm mcp show</text>
+  <text x="31" y="685" class="mono muted" font-size="18">Remove MCP server</text>
+  <text x="281" y="685" class="mono muted" font-size="18">Delete from tm; sync to update agents.</text>
+  <text x="732" y="685" class="mono muted" font-size="18">tm mcp remove</text>
+  <text x="31" y="706" class="mono muted" font-size="18">Sync MCP</text>
+  <text x="281" y="706" class="mono muted" font-size="18">Write tm MCP registry to agents.</text>
+  <text x="732" y="706" class="mono muted" font-size="18">tm mcp sync</text>
+
+  <text x="11" y="748" class="mono amber" font-size="18">SYSTEM</text>
+  <text x="31" y="769" class="mono muted" font-size="18">Backup skills</text>
+  <text x="281" y="769" class="mono muted" font-size="18">Commit managed skills with Git.</text>
+  <text x="732" y="769" class="mono muted" font-size="18">tm backup</text>
+  <text x="31" y="790" class="mono muted" font-size="18">Help</text>
+  <text x="281" y="790" class="mono muted" font-size="18">Print command reference.</text>
+  <text x="732" y="790" class="mono muted" font-size="18">tm --help</text>
+  <rect x="11" y="794" width="10" height="18" fill="#ff7f5a"/>
+</svg>

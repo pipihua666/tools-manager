@@ -1,0 +1,40 @@
+{
+  "name": "tools-manager",
+  "version": "0.1.0",
+  "description": "A Bun CLI for managing AI agent skills and MCP server configuration across tools.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "tm": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "SKILL.md",
+    "README.md",
+    "README.zh-CN.md",
+    "package.json"
+  ],
+  "scripts": {
+    "tm": "bun run src/cli.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "build": "rm -rf dist && bun run typecheck && bun build --target=bun --outfile=dist/cli.js ./src/cli.ts",
+    "check": "bun run typecheck && bun test",
+    "pack:dry": "npm pack --dry-run",
+    "prepack": "bun run build",
+    "prepublishOnly": "bun run check",
+    "release:dry": "bun run check && npm pack --dry-run",
+    "release": "bun run check && npm publish",
+    "release:patch": "bun run check && npm version patch && npm publish",
+    "release:minor": "bun run check && npm version minor && npm publish",
+    "release:major": "bun run check && npm version major && npm publish"
+  },
+  "engines": {
+    "bun": ">=1.3.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.3"
+  }
+}
