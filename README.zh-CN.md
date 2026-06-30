@@ -2,8 +2,6 @@
 
 [English](README.md)
 
-GitHub: [pipihua666/tools-manager](https://github.com/pipihua666/tools-manager)
-
 Tools Manager (`tm`) 是一个基于 Bun 的 CLI，用来统一管理 Codex、Claude Code 和 Cursor 等 AI Agent 的 skills 与 MCP server 配置。
 
 它提供一个本地统一管理入口：
