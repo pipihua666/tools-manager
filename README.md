@@ -2,6 +2,8 @@
 
 [中文文档](README.zh-CN.md)
 
+GitHub: [pipihua666/tools-manager](https://github.com/pipihua666/tools-manager)
+
 Tools Manager (`tm`) is a Bun-powered CLI for managing AI agent skills and MCP server configuration across Codex, Claude Code, and Cursor.
 
 It gives you one local source of truth for:
@@ -42,13 +44,20 @@ For source checkout usage, see [Development](#development).
 
 ## Quick Start
 
-Import all existing local agent skills into Tools Manager, then apply the default preset back to all supported agents:
+Import all existing local agent skills into Tools Manager, then sync them back to all supported agents:
 
 ```bash
+# Create the Tools Manager home directory and default config.
 tm init
+
+# Import existing skills from Codex, Claude Code, and Cursor.
 tm skills add --tool all
+
+# Show the skills now managed by Tools Manager.
 tm skills list
-tm presets apply
+
+# Sync the default skill group back to all supported agents.
+tm skills sync
 ```
 
 If you have not linked or installed the package yet, use:
@@ -57,7 +66,7 @@ If you have not linked or installed the package yet, use:
 bun run tm init
 bun run tm skills add --tool all
 bun run tm skills list
-bun run tm presets apply
+bun run tm skills sync
 ```
 
 By default, Tools Manager writes state to:
@@ -150,11 +159,21 @@ tm skills sync --mode copy
 tm skills sync Work --tool codex --mode symlink
 ```
 
-`tm skills sync` uses the same preset behavior as `tm presets apply`: it defaults to preset `Default` and tool `all`. Use `--mode symlink` or `--mode copy` to override the configured sync mode for that run.
+`tm skills sync` is the main command for making agent tools see your managed skills.
+
+Defaults:
+
+- `tm skills sync` syncs preset `Default`
+- `tm skills sync` syncs to `--tool all`, which means Codex, Claude Code, and Cursor
+- `tm skills sync` uses the configured `sync_mode`; pass `--mode symlink` or `--mode copy` to override it for one run
+
+In short: after adding or moving skills, run `tm skills sync`.
 
 ## Skill Presets
 
-Skill presets are named groups of skills. Imported skills are added to the `Default` preset automatically.
+Skill presets are named groups of skills. They help you decide which skills should be synced together.
+
+For example, you can keep everyday skills in `Default`, and work-only skills in `Work`. Imported skills are added to `Default` automatically.
 
 List skill presets:
 
@@ -174,19 +193,7 @@ Move all skills from one skill preset to another:
 tm presets move Default Work
 ```
 
-Apply a preset to agent skill directories:
-
-```bash
-tm presets apply
-tm presets apply Work --tool cursor
-tm presets apply --mode copy
-```
-
-Defaults:
-
-- `tm presets apply` uses preset `Default`
-- `tm presets apply` uses `--tool all`
-- `tm presets apply` uses `sync_mode` from config unless `--mode symlink|copy` is provided
+After changing preset membership, use `tm skills sync` to update agent skill directories.
 
 ## MCP Servers
 
@@ -272,7 +279,6 @@ tm skills show <name> [--json]
 tm skills remove <name> [--yes]
 tm skills sync [preset] [--tool <tool|all>] [--mode <symlink|copy>]
 tm presets list [--json]
-tm presets apply [preset] [--tool <tool|all>] [--mode <symlink|copy>]
 tm presets move-skill <skill> <from> <to>
 tm presets move <from> <to>
 tm mcp add <name> --command <cmd> [--arg value] [--env K=V] [--tool <tool|all>]

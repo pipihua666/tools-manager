@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "description": "A Bun CLI for managing AI agent skills and MCP server configuration across tools.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pipihua666/tools-manager.git"
+  },
+  "homepage": "https://github.com/pipihua666/tools-manager#readme",
+  "bugs": {
+    "url": "https://github.com/pipihua666/tools-manager/issues"
+  },
   "type": "module",
   "bin": {
     "tm": "./dist/cli.js"

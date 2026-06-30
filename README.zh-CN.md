@@ -2,6 +2,8 @@
 
 [English](README.md)
 
+GitHub: [pipihua666/tools-manager](https://github.com/pipihua666/tools-manager)
+
 Tools Manager (`tm`) 是一个基于 Bun 的 CLI，用来统一管理 Codex、Claude Code 和 Cursor 等 AI Agent 的 skills 与 MCP server 配置。
 
 它提供一个本地统一管理入口：
@@ -41,13 +43,20 @@ tm status
 
 ## 快速开始
 
-先把所有本地 Agent 里已有的 skills 导入 Tools Manager，再把默认 preset 应用回所有支持的 Agent：
+先把所有本地 Agent 里已有的 skills 导入 Tools Manager，再同步回所有支持的 Agent：
 
 ```bash
+# 创建 Tools Manager 的本地管理目录和默认配置。
 tm init
+
+# 从 Codex、Claude Code、Cursor 导入已有 skills。
 tm skills add --tool all
+
+# 查看当前由 Tools Manager 托管的 skills。
 tm skills list
-tm presets apply
+
+# 把默认 skill 分组同步回所有支持的 Agent。
+tm skills sync
 ```
 
 如果还没有 link 或安装这个包，可以使用：
@@ -56,7 +65,7 @@ tm presets apply
 bun run tm init
 bun run tm skills add --tool all
 bun run tm skills list
-bun run tm presets apply
+bun run tm skills sync
 ```
 
 默认情况下，Tools Manager 会把状态写入：
@@ -149,11 +158,21 @@ tm skills sync --mode copy
 tm skills sync Work --tool codex --mode symlink
 ```
 
-`tm skills sync` 与 `tm presets apply` 使用相同的 preset 行为：默认 preset 是 `Default`，默认 tool 是 `all`。使用 `--mode symlink` 或 `--mode copy` 可以覆盖本次同步的配置模式。
+`tm skills sync` 是让 Agent 工具看到托管 skills 的主命令。
+
+默认行为：
+
+- `tm skills sync` 同步 `Default` preset
+- `tm skills sync` 同步到 `--tool all`，也就是 Codex、Claude Code 和 Cursor
+- `tm skills sync` 使用配置里的 `sync_mode`；传入 `--mode symlink` 或 `--mode copy` 可以覆盖本次执行
+
+简单理解：添加或移动 skills 后，执行 `tm skills sync`。
 
 ## Skill Presets
 
-Skill presets 是命名的 skill 分组。导入的 skills 会自动加入 `Default` preset。
+Skill presets 是命名的 skill 分组，用来决定哪些 skills 要一起同步。
+
+例如，日常使用的 skills 可以放在 `Default`，工作专用的 skills 可以放在 `Work`。导入的 skills 会自动加入 `Default`。
 
 列出 skill presets：
 
@@ -173,19 +192,7 @@ tm presets move-skill my-skill Default Work
 tm presets move Default Work
 ```
 
-把 preset 应用到 Agent skill 目录：
-
-```bash
-tm presets apply
-tm presets apply Work --tool cursor
-tm presets apply --mode copy
-```
-
-默认行为：
-
-- `tm presets apply` 使用 preset `Default`
-- `tm presets apply` 使用 `--tool all`
-- `tm presets apply` 默认使用配置里的 `sync_mode`，传入 `--mode symlink|copy` 时覆盖本次执行
+调整 preset 分组后，使用 `tm skills sync` 更新 Agent skill 目录。
 
 ## MCP Servers
 
@@ -271,7 +278,6 @@ tm skills show <name> [--json]
 tm skills remove <name> [--yes]
 tm skills sync [preset] [--tool <tool|all>] [--mode <symlink|copy>]
 tm presets list [--json]
-tm presets apply [preset] [--tool <tool|all>] [--mode <symlink|copy>]
 tm presets move-skill <skill> <from> <to>
 tm presets move <from> <to>
 tm mcp add <name> --command <cmd> [--arg value] [--env K=V] [--tool <tool|all>]

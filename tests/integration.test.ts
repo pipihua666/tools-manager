@@ -2,6 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { lstat, mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { runGit } from "../src/core/git";
 import { initManager } from "../src/core/init";
 import { addAllLocalAgentSkills, addCodexSkills, addLocalAgentSkills, addSkill, addSkills, getSkill, removeSkill } from "../src/core/skill";
 import { applyPreset, getPresetSkills, listPresets, movePreset, moveSkillPreset } from "../src/core/preset";
@@ -57,6 +58,31 @@ test("adds multiple skills from one source and updates existing skills", async (
   expect((await getSkill("multi-a"))?.description).toBe("Updated");
   const defaultSkills = (await getPresetSkills("Default")).map((skill) => skill.name);
   expect(defaultSkills).toEqual(expect.arrayContaining(["multi-a", "multi-b", "tools-manager"]));
+});
+
+test("adds multiple skills from a remote repository skills directory", async () => {
+  const managerHome = await tempRoot("tm-home-");
+  process.env.TOOLS_MANAGER_HOME = managerHome;
+  const repo = await tempRoot("tm-remote-skills-");
+  await mkdir(join(repo, "skills", "skill-a"), { recursive: true });
+  await mkdir(join(repo, "skills", "skill-b"), { recursive: true });
+  await mkdir(join(repo, "skills", "skill-c"), { recursive: true });
+  await writeFile(join(repo, "skills", "skill-a", "SKILL.md"), "---\nname: Remote Skill A\ndescription: First\n---\n");
+  await writeFile(join(repo, "skills", "skill-b", "SKILL.md"), "---\nname: Remote Skill B\ndescription: Second\n---\n");
+  await writeFile(join(repo, "skills", "skill-c", "SKILL.md"), "---\nname: Remote Skill C\ndescription: Third\n---\n");
+  runGit(["-C", repo, "init", "-b", "main"], "Failed to initialize test repository.");
+  runGit(["-C", repo, "add", "."], "Failed to stage test repository.");
+  runGit(["-C", repo, "-c", "user.name=Tools Manager Test", "-c", "user.email=test@example.com", "commit", "-m", "add skills"], "Failed to commit test repository.");
+
+  await initManager();
+  const imported = await addSkills(`file://${repo}#main:skills`);
+  const importedFromRoot = await addSkills(`file://${repo}#main`);
+
+  expect(imported.map((skill) => skill.name).sort()).toEqual(["remote-skill-a", "remote-skill-b", "remote-skill-c"]);
+  expect(importedFromRoot.map((skill) => skill.name).sort()).toEqual(["remote-skill-a", "remote-skill-b", "remote-skill-c"]);
+  expect((await getPresetSkills("Default")).map((skill) => skill.name)).toEqual(
+    expect.arrayContaining(["remote-skill-a", "remote-skill-b", "remote-skill-c", "tools-manager"]),
+  );
 });
 
 test("moves skills from one preset to another", async () => {

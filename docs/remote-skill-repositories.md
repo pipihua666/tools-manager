@@ -25,6 +25,19 @@ Use this layout when one repository contains multiple skills:
 
 ```text
 my-skills-repo/
+  skills/
+    skill-a/
+      SKILL.md
+    skill-b/
+      SKILL.md
+    skill-c/
+      SKILL.md
+```
+
+The `skills/` directory is optional. Tools Manager scans recursively from the selected import root, so this also works:
+
+```text
+my-skills-repo/
   skill-a/
     SKILL.md
   skill-b/
@@ -33,7 +46,13 @@ my-skills-repo/
     SKILL.md
 ```
 
-Import all skills under the shared directory:
+Import all skills from the repository:
+
+```bash
+tm skills add 'git@github.com:you/my-skills-repo.git#main'
+```
+
+Or import all skills under the `skills/` directory explicitly:
 
 ```bash
 tm skills add 'git@github.com:you/my-skills-repo.git#main:skills'
@@ -42,7 +61,7 @@ tm skills add 'git@github.com:you/my-skills-repo.git#main:skills'
 Or import a specific skill by providing the branch, tag, or commit and the skill subpath:
 
 ```bash
-tm skills add 'git@github.com:you/my-skills-repo.git#main:skill-a'
+tm skills add 'git@github.com:you/my-skills-repo.git#main:skills/skill-a'
 ```
 
 The Git source format is:
