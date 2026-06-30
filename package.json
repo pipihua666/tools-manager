@@ -1,6 +1,6 @@
 {
   "name": "tools-manager",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A Bun CLI for managing AI agent skills and MCP server configuration across tools.",
   "license": "MIT",
   "repository": {
