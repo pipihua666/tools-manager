@@ -92,7 +92,9 @@ export async function syncMcp(toolInput?: string): Promise<Array<{ tool: string;
 
 function parseToolMcp(tool: ToolAdapter, text: string | null): McpServer[] {
   if (!text?.trim()) return [];
-  return tool.mcpKind === "codex-toml" ? parseCodexToml(text, tool.key) : parseMcpJson(text, tool.key);
+  if (tool.mcpKind === "codex-toml") return parseCodexToml(text, tool.key);
+  if (tool.mcpKind === "opencode-json") return parseOpenCodeJson(text, tool.key);
+  return parseMcpJson(text, tool.key);
 }
 
 function rowToServer(row: McpServerRow): McpServer {
@@ -111,6 +113,10 @@ async function renderToolMcp(tool: ToolAdapter, servers: McpServer[]): Promise<s
   const backup = await backupFile(tool.mcpPath);
   if (tool.mcpKind === "codex-toml") {
     await writeText(tool.mcpPath, renderCodexToml(await readTextIfExists(tool.mcpPath), servers));
+    return backup;
+  }
+  if (tool.mcpKind === "opencode-json") {
+    await writeText(tool.mcpPath, renderOpenCodeJson(await readTextIfExists(tool.mcpPath), servers));
     return backup;
   }
   await writeText(tool.mcpPath, renderMcpJson(await readTextIfExists(tool.mcpPath), servers));
@@ -151,6 +157,49 @@ export function parseMcpJson(text: string, tool: string): McpServer[] {
         env: parseStringRecord(server.env),
         targetTools: [tool],
         enabled: true,
+      }];
+    });
+  } catch {
+    return [];
+  }
+}
+
+export function renderOpenCodeJson(existing: string | null, servers: McpServer[]): string {
+  let root: Record<string, unknown> = {};
+  if (existing?.trim()) {
+    try {
+      const parsed = JSON.parse(existing) as unknown;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) root = parsed as Record<string, unknown>;
+    } catch {
+      root = {};
+    }
+  }
+  const mcp = normalizeObject(root.mcp);
+  for (const server of servers) {
+    mcp[server.name] = serverToOpenCodeJson(server);
+  }
+  root.mcp = mcp;
+  return `${JSON.stringify(root, null, 2)}\n`;
+}
+
+export function parseOpenCodeJson(text: string, tool: string): McpServer[] {
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    const root = normalizeObject(parsed);
+    const mcp = normalizeObject(root.mcp);
+    return Object.entries(mcp).flatMap(([name, value]) => {
+      const server = normalizeObject(value);
+      const type = typeof server.type === "string" ? server.type : "local";
+      if (type !== "local") return [];
+      const commandParts = Array.isArray(server.command) ? server.command.map(String) : [];
+      if (commandParts.length === 0) return [];
+      return [{
+        name,
+        command: commandParts[0]!,
+        args: commandParts.slice(1),
+        env: parseStringRecord(server.environment),
+        targetTools: [tool],
+        enabled: typeof server.enabled === "boolean" ? server.enabled : true,
       }];
     });
   } catch {
@@ -240,6 +289,15 @@ function serverToJson(server: McpServer): Record<string, unknown> {
     command: server.command,
     args: server.args,
     ...(Object.keys(server.env).length > 0 ? { env: server.env } : {}),
+  };
+}
+
+function serverToOpenCodeJson(server: McpServer): Record<string, unknown> {
+  return {
+    type: "local",
+    command: [server.command, ...server.args],
+    enabled: server.enabled,
+    ...(Object.keys(server.env).length > 0 ? { environment: server.env } : {}),
   };
 }
 

@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { addMcpServer, getMcpServer, listMcpServers, parseCodexToml, parseMcpJson, removeMcpServer, renderCodexToml, renderMcpJson, type McpServer } from "../src/core/mcp";
+import { addMcpServer, getMcpServer, listMcpServers, parseCodexToml, parseMcpJson, parseOpenCodeJson, removeMcpServer, renderCodexToml, renderMcpJson, renderOpenCodeJson, type McpServer } from "../src/core/mcp";
 import { closeDb } from "../src/core/db";
 
 let roots: string[] = [];
@@ -65,6 +65,31 @@ test("parses Codex TOML servers", () => {
     env: { TOKEN: "x" },
     targetTools: ["codex"],
     enabled: true,
+  }]);
+});
+
+test("renders OpenCode JSON without removing unrelated config", () => {
+  const rendered = renderOpenCodeJson('{"theme":"system","mcp":{"old":{"type":"local","command":["node","server.js"]}}}', [server]);
+  const parsed = JSON.parse(rendered);
+  expect(parsed.theme).toBe("system");
+  expect(parsed.mcp.old.command).toEqual(["node", "server.js"]);
+  expect(parsed.mcp.playwright).toEqual({
+    type: "local",
+    command: ["npx", "@playwright/mcp@latest"],
+    enabled: true,
+    environment: { TOKEN: "$TOKEN" },
+  });
+});
+
+test("parses OpenCode local MCP servers", () => {
+  const servers = parseOpenCodeJson('{"mcp":{"playwright":{"type":"local","command":["npx","@playwright/mcp@latest"],"environment":{"TOKEN":"x"},"enabled":false},"remote":{"type":"remote","url":"https://example.com/mcp"}}}', "opencode");
+  expect(servers).toEqual([{
+    name: "playwright",
+    command: "npx",
+    args: ["@playwright/mcp@latest"],
+    env: { TOKEN: "x" },
+    targetTools: ["opencode"],
+    enabled: false,
   }]);
 });
 

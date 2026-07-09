@@ -15,6 +15,7 @@ Use this skill when working with the `tm` CLI or the `tools-manager` repository.
   - Codex: `~/.codex/skills`
   - Claude Code: `~/.claude/skills`
   - Cursor: `~/.cursor/skills`
+  - OpenCode: `~/.config/opencode/skills`
 - `Default` is created automatically and imported skills are added to it.
 - `sync_mode` defaults to `symlink`; command flags can override it per run.
 

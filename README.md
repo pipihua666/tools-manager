@@ -2,7 +2,7 @@
 
 [中文文档](README.zh-CN.md)
 
-Tools Manager (`tm`) is a Bun-powered CLI for managing AI agent skills and MCP server configuration across Codex, Claude Code, and Cursor.
+Tools Manager (`tm`) is a Bun-powered CLI for managing AI agent skills and MCP server configuration across Codex, Claude Code, Cursor, and OpenCode.
 
 It gives you one local source of truth for:
 
@@ -48,7 +48,7 @@ Import all existing local agent skills into Tools Manager, then sync them back t
 # Create the Tools Manager home directory and default config.
 tm init
 
-# Import existing skills from Codex, Claude Code, and Cursor.
+# Import existing skills from Codex, Claude Code, Cursor, and OpenCode.
 tm skills add --tool all
 
 # Show the skills now managed by Tools Manager.
@@ -97,6 +97,7 @@ Add existing skills from one local agent:
 tm skills add --tool codex
 tm skills add --tool cursor
 tm skills add --tool claude_code
+tm skills add --tool opencode
 ```
 
 Import existing skills from all supported local agents:
@@ -162,7 +163,7 @@ tm skills sync Work --tool codex --mode symlink
 Defaults:
 
 - `tm skills sync` syncs preset `Default`
-- `tm skills sync` syncs to `--tool all`, which means Codex, Claude Code, and Cursor
+- `tm skills sync` syncs to `--tool all`, which means Codex, Claude Code, Cursor, and OpenCode
 - `tm skills sync` uses the configured `sync_mode`; pass `--mode symlink` or `--mode copy` to override it for one run
 
 In short: after adding or moving skills, run `tm skills sync`.
@@ -251,6 +252,7 @@ Supported config targets:
 codex       -> ~/.codex/config.toml
 claude_code -> ~/.claude/mcp.json
 cursor      -> ~/.cursor/mcp.json
+opencode    -> ~/.config/opencode/opencode.json
 ```
 
 ## Backup
@@ -295,6 +297,7 @@ Supported tools:
 codex
 claude_code
 cursor
+opencode
 all
 ```
 

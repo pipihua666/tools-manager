@@ -2,7 +2,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { pathExists } from "./fs";
 
-export type ToolKey = "codex" | "claude_code" | "cursor";
+export type ToolKey = "codex" | "claude_code" | "cursor" | "opencode";
 
 export type ToolAdapter = {
   key: ToolKey;
@@ -10,7 +10,7 @@ export type ToolAdapter = {
   detectPath: string;
   skillsDir: string;
   projectSkillsDir: string;
-  mcpKind: "codex-toml" | "claude-json" | "cursor-json";
+  mcpKind: "codex-toml" | "claude-json" | "cursor-json" | "opencode-json";
   mcpPath: string;
 };
 
@@ -41,6 +41,15 @@ export const toolAdapters: ToolAdapter[] = [
     projectSkillsDir: ".cursor/skills",
     mcpKind: "cursor-json",
     mcpPath: join(homedir(), ".cursor", "mcp.json"),
+  },
+  {
+    key: "opencode",
+    displayName: "OpenCode",
+    detectPath: join(homedir(), ".config", "opencode"),
+    skillsDir: join(homedir(), ".config", "opencode", "skills"),
+    projectSkillsDir: ".opencode/skills",
+    mcpKind: "opencode-json",
+    mcpPath: join(homedir(), ".config", "opencode", "opencode.json"),
   },
 ];
 

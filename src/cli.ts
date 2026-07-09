@@ -140,7 +140,7 @@ async function resolveMenuArgs(argv: string[]): Promise<string[] | null> {
       if (value === null) return null;
       resolved.push(value);
     } else if (arg === "$source") {
-      const value = await selectExistingOrCustom("Skill Source", ["~/.codex/skills", "~/.claude/skills", "~/.cursor/skills"], "Skill source path or Git URL: ");
+      const value = await selectExistingOrCustom("Skill Source", ["~/.codex/skills", "~/.claude/skills", "~/.cursor/skills", "~/.config/opencode/skills"], "Skill source path or Git URL: ");
       if (value === null) return null;
       resolved.push(value);
     } else if (arg === "$mcp") {
@@ -193,7 +193,7 @@ async function resolveMenuArgs(argv: string[]): Promise<string[] | null> {
     } else if (arg === "$tool?") {
       const previous = resolved[resolved.length - 1];
       if (previous === "--tool") {
-        const value = await selectExistingOrCustom("Tool", ["all", "codex", "cursor", "claude_code"], "Tool [all|codex|cursor|claude_code]: ");
+        const value = await selectExistingOrCustom("Tool", ["all", "codex", "cursor", "claude_code", "opencode"], "Tool [all|codex|cursor|claude_code|opencode]: ");
         if (value === null) return null;
         resolved.push(value);
       }

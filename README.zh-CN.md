@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-Tools Manager (`tm`) 是一个基于 Bun 的 CLI，用来统一管理 Codex、Claude Code 和 Cursor 等 AI Agent 的 skills 与 MCP server 配置。
+Tools Manager (`tm`) 是一个基于 Bun 的 CLI，用来统一管理 Codex、Claude Code、Cursor 和 OpenCode 等 AI Agent 的 skills 与 MCP server 配置。
 
 它提供一个本地统一管理入口：
 
@@ -47,7 +47,7 @@ tm status
 # 创建 Tools Manager 的本地管理目录和默认配置。
 tm init
 
-# 从 Codex、Claude Code、Cursor 导入已有 skills。
+# 从 Codex、Claude Code、Cursor 和 OpenCode 导入已有 skills。
 tm skills add --tool all
 
 # 查看当前由 Tools Manager 托管的 skills。
@@ -96,6 +96,7 @@ tm skills add ./my-skill
 tm skills add --tool codex
 tm skills add --tool cursor
 tm skills add --tool claude_code
+tm skills add --tool opencode
 ```
 
 从所有支持的本地 Agent 导入已有 skills：
@@ -161,7 +162,7 @@ tm skills sync Work --tool codex --mode symlink
 默认行为：
 
 - `tm skills sync` 同步 `Default` preset
-- `tm skills sync` 同步到 `--tool all`，也就是 Codex、Claude Code 和 Cursor
+- `tm skills sync` 同步到 `--tool all`，也就是 Codex、Claude Code、Cursor 和 OpenCode
 - `tm skills sync` 使用配置里的 `sync_mode`；传入 `--mode symlink` 或 `--mode copy` 可以覆盖本次执行
 
 简单理解：添加或移动 skills 后，执行 `tm skills sync`。
@@ -250,6 +251,7 @@ tm mcp sync --tool codex
 codex       -> ~/.codex/config.toml
 claude_code -> ~/.claude/mcp.json
 cursor      -> ~/.cursor/mcp.json
+opencode    -> ~/.config/opencode/opencode.json
 ```
 
 ## Backup
@@ -294,6 +296,7 @@ tm backup
 codex
 claude_code
 cursor
+opencode
 all
 ```
 
