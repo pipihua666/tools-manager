@@ -9,6 +9,8 @@ export type ToolAdapter = {
   displayName: string;
   detectPath: string;
   skillsDir: string;
+  additionalSkillsDirs?: string[];
+  systemSkillsDirs?: string[];
   projectSkillsDir: string;
   mcpKind: "codex-toml" | "claude-json" | "cursor-json" | "opencode-json";
   mcpPath: string;
@@ -20,6 +22,8 @@ export const toolAdapters: ToolAdapter[] = [
     displayName: "Codex",
     detectPath: join(homedir(), ".codex"),
     skillsDir: join(homedir(), ".codex", "skills"),
+    additionalSkillsDirs: [join(homedir(), ".agents", "skills")],
+    systemSkillsDirs: [join(homedir(), ".codex", "skills", ".system")],
     projectSkillsDir: ".codex/skills",
     mcpKind: "codex-toml",
     mcpPath: join(homedir(), ".codex", "config.toml"),
@@ -29,6 +33,7 @@ export const toolAdapters: ToolAdapter[] = [
     displayName: "Claude Code",
     detectPath: join(homedir(), ".claude"),
     skillsDir: join(homedir(), ".claude", "skills"),
+    additionalSkillsDirs: [join(homedir(), ".agents", "skills")],
     projectSkillsDir: ".claude/skills",
     mcpKind: "claude-json",
     mcpPath: join(homedir(), ".claude", "mcp.json"),
@@ -52,6 +57,17 @@ export const toolAdapters: ToolAdapter[] = [
     mcpPath: join(homedir(), ".config", "opencode", "opencode.json"),
   },
 ];
+
+export function getToolSkillsDirs(tool: ToolAdapter): string[] {
+  return [...new Set([tool.skillsDir, ...(tool.additionalSkillsDirs || [])])];
+}
+
+export function getToolSkillLocations(tool: ToolAdapter): Array<{ path: string; scope: "user" | "system"; editable: boolean }> {
+  return [
+    ...getToolSkillsDirs(tool).map((path) => ({ path, scope: "user" as const, editable: false })),
+    ...(tool.systemSkillsDirs || []).map((path) => ({ path, scope: "system" as const, editable: false })),
+  ];
+}
 
 export function getTool(key: string): ToolAdapter {
   const tool = toolAdapters.find((adapter) => adapter.key === key);

@@ -25,7 +25,7 @@
   ],
   "scripts": {
     "tm": "bun run src/cli.ts",
-    "dev": "bun --watch run src/cli.ts web --dev --port 4343 --no-open",
+    "web": "bun --watch run src/cli.ts web --dev --port 4343 --no-open",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "build": "rm -rf dist && bun run typecheck && bun build --target=bun --outfile=dist/cli.js ./src/cli.ts",

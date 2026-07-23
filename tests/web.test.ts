@@ -53,6 +53,16 @@ test("serves the web dashboard and protects mutations", async () => {
   const crossSite = await handler(new Request("http://127.0.0.1:4343/api/snapshot", {
     headers: { "sec-fetch-site": "cross-site" },
   }));
+  const createdPreset = await handler(new Request("http://127.0.0.1:4343/api/presets", {
+    method: "POST",
+    headers: mutationHeaders,
+    body: JSON.stringify({ name: "Work" }),
+  }));
+  const duplicatePreset = await handler(new Request("http://127.0.0.1:4343/api/presets", {
+    method: "POST",
+    headers: mutationHeaders,
+    body: JSON.stringify({ name: "work" }),
+  }));
   const snapshot = await handler(new Request("http://127.0.0.1:4343/api/snapshot"));
   const snapshotText = await snapshot.text();
   const mcpDetail = await handler(new Request("http://127.0.0.1:4343/api/mcp/private-server"));
@@ -81,10 +91,48 @@ test("serves the web dashboard and protects mutations", async () => {
   expect(page.status).toBe(200);
   expect(html).toContain("test-token");
   expect(html).toContain("const DEV = false;");
+  expect(html).not.toContain("Managed inventory");
+  expect(html).not.toContain('data-view="agents"');
+  expect(html).not.toContain("Open agents");
+  expect(html).toContain("<th>Skill paths</th><th>MCP config</th>");
+  expect(html).toContain('class="agent-table"');
+  expect(html).toContain('class="busy-status" role="status"');
+  expect(html).toContain('"Import": "Importing..."');
+  expect(html).toContain('document.body.setAttribute("aria-busy"');
+  expect(html).toContain('data-resource-search=');
+  expect(html).toContain('selectField("Preset", "preset", presetOptions("Default"))');
+  expect(html).toContain('data-action="create-preset"');
+  expect(html).toContain('"Create": "Creating..."');
+  expect(html).toContain('synced / installed');
+  expect(html).not.toContain('managed / installed');
+  expect(html).toContain('read only');
+  expect(html).toContain("server.synced ? 'synced' : 'not synced'");
+  expect(html).not.toContain("edit-agent-skill");
+  expect(html).toContain('managed && item.scope !== "system"');
+  expect(html).toContain('<th>Name</th><th>Scope</th>');
+  expect(html).toContain('<th>Name</th><th>Scope</th><th>Description</th><th>Updated</th><th>Sync</th>');
+  expect(html).toContain('<th>Name</th><th>Transport</th><th>Endpoint</th><th>Targets</th><th>Status</th><th>Sync</th>');
+  expect(html).not.toContain("<th>Management</th>");
+  expect(html).not.toContain("Sync to Agents");
+  expect(html).not.toContain('data-action="sync-mcp"');
+  expect(html).toContain('data-action="view-agent-mcp"');
+  expect(html).toContain('data-resource-search-form=');
+  expect(html).toContain('<button type="submit" class="btn">Search</button>');
+  expect(html).toContain("Move Skills");
+  expect(html).toContain("Remove Skills");
+  expect(html).toContain("multiCheckField");
+  expect(html).toContain('form.getAll("skills")');
+  expect(html).toContain('input.row-check[type="checkbox"]');
+  expect(html).toContain('width: 16px; min-width: 16px; height: 16px; min-height: 16px;');
+  expect(html).toContain("data-description=\"' + esc(description) + '\"");
+  expect(html).toContain("presetSkillTags(preset.skills)");
   expect(script).toBeTruthy();
   expect(() => new Function(script!)).not.toThrow();
   expect(denied.status).toBe(403);
   expect(crossSite.status).toBe(403);
+  expect(createdPreset.status).toBe(201);
+  expect((await createdPreset.json() as { preset: { name: string; skill_count: number } }).preset).toMatchObject({ name: "Work", skill_count: 0 });
+  expect(duplicatePreset.status).toBe(400);
   expect(snapshotText).toContain("PRIVATE_TOKEN");
   expect(snapshotText).not.toContain("must-not-leak");
   expect((await mcpDetail.json() as { server: { env: Record<string, string> } }).server.env.PRIVATE_TOKEN).toBe("must-not-leak");
@@ -102,6 +150,51 @@ test("serves the web dashboard and protects mutations", async () => {
     targetTools: ["cursor"],
     enabled: false,
   });
+});
+
+test("moves and removes multiple preset skills through the web API", async () => {
+  const managerHome = await tempRoot("tm-web-home-");
+  const skillSource = await tempRoot("tm-web-batch-skills-");
+  process.env.TOOLS_MANAGER_HOME = managerHome;
+  await mkdir(join(skillSource, "a"), { recursive: true });
+  await mkdir(join(skillSource, "b"), { recursive: true });
+  await writeFile(join(skillSource, "a", "SKILL.md"), "---\nname: Web Batch A\ndescription: First\n---\n");
+  await writeFile(join(skillSource, "b", "SKILL.md"), "---\nname: Web Batch B\ndescription: Second\n---\n");
+  await initManager();
+  const handler = createWebHandler("test-token");
+  const headers = {
+    "content-type": "application/json",
+    "x-tm-token": "test-token",
+    origin: "http://127.0.0.1:4343",
+  };
+
+  await handler(new Request("http://127.0.0.1:4343/api/skills/import", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ source: skillSource }),
+  }));
+  const moved = await handler(new Request("http://127.0.0.1:4343/api/presets/move-skill", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ names: ["web-batch-a", "web-batch-b"], from: "Default", to: "Work" }),
+  }));
+  const afterMove = await handler(new Request("http://127.0.0.1:4343/api/snapshot"));
+  const removed = await handler(new Request("http://127.0.0.1:4343/api/presets/remove-skill", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ names: ["web-batch-a", "web-batch-b"], preset: "Work" }),
+  }));
+  const afterRemove = await handler(new Request("http://127.0.0.1:4343/api/snapshot"));
+
+  expect(moved.status).toBe(200);
+  expect(await moved.json()).toMatchObject({ skills: ["web-batch-a", "web-batch-b"], count: 2 });
+  const movedSnapshot = await afterMove.json() as { presets: Array<{ name: string; skills: string[] }> };
+  expect(movedSnapshot.presets.find((preset) => preset.name === "Work")?.skills).toEqual(["web-batch-a", "web-batch-b"]);
+  expect(removed.status).toBe(200);
+  expect(await removed.json()).toMatchObject({ skills: ["web-batch-a", "web-batch-b"], count: 2 });
+  const removedSnapshot = await afterRemove.json() as { presets: Array<{ name: string; skills: string[] }>; skills: Array<{ name: string }> };
+  expect(removedSnapshot.presets.find((preset) => preset.name === "Work")?.skills).toEqual([]);
+  expect(removedSnapshot.skills.map((skill) => skill.name)).toEqual(expect.arrayContaining(["web-batch-a", "web-batch-b"]));
 });
 
 test("exposes browser reload events only in development mode", async () => {
@@ -138,8 +231,9 @@ test("imports, inspects, and removes a skill through the web API", async () => {
   const imported = await handler(new Request("http://127.0.0.1:4343/api/skills/import", {
     method: "POST",
     headers,
-    body: JSON.stringify({ source: skillSource }),
+    body: JSON.stringify({ source: skillSource, preset: "Work" }),
   }));
+  const importedSnapshot = await handler(new Request("http://127.0.0.1:4343/api/snapshot"));
   const updated = await handler(new Request("http://127.0.0.1:4343/api/skills/web-managed", {
     method: "PUT",
     headers,
@@ -164,6 +258,10 @@ test("imports, inspects, and removes a skill through the web API", async () => {
 
   expect(imported.status).toBe(201);
   expect((await imported.json() as { skills: Array<{ name: string }> }).skills[0]?.name).toBe("web-managed");
+  const importedSnapshotBody = await importedSnapshot.json() as { presets: Array<{ name: string; skills: string[] }>; skills: Array<{ name: string; scope: string; editable: boolean }> };
+  expect(importedSnapshotBody.presets.find((preset) => preset.name === "Work")?.skills).toContain("web-managed");
+  expect(importedSnapshotBody.presets.find((preset) => preset.name === "Default")?.skills).not.toContain("web-managed");
+  expect(importedSnapshotBody.skills.find((skill) => skill.name === "web-managed")).toMatchObject({ scope: "user", editable: true });
   expect(updated.status).toBe(200);
   expect(detail.status).toBe(200);
   const detailBody = await detail.json() as { skill: { description: string }; markdown: string };

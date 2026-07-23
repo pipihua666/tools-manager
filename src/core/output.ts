@@ -15,6 +15,23 @@ export function success(text: string): void {
   console.log(`OK  ${text}`);
 }
 
+export async function withLoading<T>(text: string, action: () => Promise<T>, options: { enabled?: boolean } = {}): Promise<T> {
+  const enabled = options.enabled !== false && Boolean(process.stderr.isTTY) && process.env.TERM !== "dumb";
+  if (!enabled) return action();
+
+  const frames = ["|", "/", "-", "\\"];
+  let frame = 0;
+  const render = () => process.stderr.write(`\r\x1b[2K${frames[frame++ % frames.length]} ${text}`);
+  render();
+  const timer = setInterval(render, 80);
+  try {
+    return await action();
+  } finally {
+    clearInterval(timer);
+    process.stderr.write("\r\x1b[2K");
+  }
+}
+
 export function table(rows: Array<Record<string, unknown>>, options: { title?: string; empty?: string; maxWidth?: number } = {}): void {
   if (options.title) heading(options.title);
   if (rows.length === 0) {

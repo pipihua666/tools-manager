@@ -5,7 +5,7 @@ import { copyDir, ensureDir, pathExists, removePath, replaceWithSymlink } from "
 import { paths, expandHome } from "./paths";
 import { cloneGitSource, isGitSource, parseGitSource } from "./git";
 import { assertUsage } from "./errors";
-import { getTool, toolAdapters, type ToolAdapter } from "./tools";
+import { getTool, getToolSkillLocations, getToolSkillsDirs, toolAdapters, type ToolAdapter } from "./tools";
 
 export type SkillCandidate = {
   dir: string;
@@ -37,6 +37,8 @@ export type AgentSkill = {
   name: string;
   description: string | null;
   path: string;
+  scope: "user" | "system";
+  editable: boolean;
 };
 
 export async function findSkillFile(dir: string): Promise<string | null> {
@@ -71,78 +73,107 @@ async function walk(dir: string, candidates: SkillCandidate[]): Promise<void> {
   }
 }
 
-export async function addSkill(source: string): Promise<SkillRow> {
-  const skills = await addSkills(source);
+export async function addSkill(source: string, presetName = "Default"): Promise<SkillRow> {
+  const skills = await addSkills(source, presetName);
   return skills[0]!;
 }
 
-export async function addSkills(source: string): Promise<SkillRow[]> {
+export async function addSkills(source: string, presetName = "Default"): Promise<SkillRow[]> {
   await ensureDir(paths().skillsDir);
   const resolved = isGitSource(source) ? await resolveGitImport(source) : await resolveLocalImport(source);
   const candidates = await findSkillCandidates(resolved.root);
   assertUsage(candidates.length > 0, `No skill found in ${resolved.root}. Expected SKILL.md or skill.md.`);
   const imported: SkillRow[] = [];
-  for (const candidate of candidates) imported.push(await importCandidate(candidate, resolved.importSource));
+  for (const candidate of candidates) imported.push(await importCandidate(candidate, resolved.importSource, { presetName }));
   return imported;
 }
 
-export async function addCodexSkills(skillsDir = getTool("codex").skillsDir): Promise<SkillRow[]> {
-  return addSkillsFromDirectory(skillsDir, "Codex");
+export async function addCodexSkills(skillsDir?: string, presetName = "Default"): Promise<SkillRow[]> {
+  if (skillsDir) return addSkillsFromDirectory(skillsDir, "Codex", { presetName });
+  return addSkillsFromTool(getTool("codex"), { presetName });
 }
 
-export async function addLocalAgentSkills(toolInput: string, tools: ToolAdapter[] = toolAdapters): Promise<ToolSkillImportResult[]> {
-  if (toolInput === "all") return addAllLocalAgentSkills(tools);
+export async function addLocalAgentSkills(toolInput: string, tools: ToolAdapter[] = toolAdapters, presetName = "Default"): Promise<ToolSkillImportResult[]> {
+  if (toolInput === "all") return addAllLocalAgentSkills(tools, presetName);
   const tool = tools.find((adapter) => adapter.key === toolInput) || getTool(toolInput);
-  const skills = await addSkillsFromDirectory(tool.skillsDir, tool.displayName);
+  const skills = await addSkillsFromTool(tool, { presetName });
   return [{ tool: tool.key, skills, skipped: false }];
 }
 
-export async function addAllLocalAgentSkills(tools: ToolAdapter[] = toolAdapters): Promise<ToolSkillImportResult[]> {
+export async function addAllLocalAgentSkills(tools: ToolAdapter[] = toolAdapters, presetName = "Default"): Promise<ToolSkillImportResult[]> {
   const results: ToolSkillImportResult[] = [];
   for (const tool of tools) {
-    if (!(await pathExists(tool.skillsDir))) {
-      results.push({ tool: tool.key, skills: [], skipped: true, reason: `Skills directory does not exist: ${tool.skillsDir}` });
+    const existingDirs = [];
+    for (const skillsDir of getToolSkillsDirs(tool)) {
+      if (await pathExists(skillsDir)) existingDirs.push(skillsDir);
+    }
+    if (existingDirs.length === 0) {
+      results.push({ tool: tool.key, skills: [], skipped: true, reason: `Skills directories do not exist: ${getToolSkillsDirs(tool).join(", ")}` });
       continue;
     }
-    const skills = await addSkillsFromDirectory(tool.skillsDir, tool.displayName, { requireAny: false });
+    const skills = await addSkillsFromTool(tool, { requireAny: false, presetName });
     results.push({ tool: tool.key, skills, skipped: false });
   }
   assertUsage(results.some((result) => result.skills.length > 0), "No local agent skills found.");
   return results;
 }
 
-export async function listAgentSkills(toolInput = "all", tools: ToolAdapter[] = toolAdapters): Promise<Array<{ tool: string; path: string; skills: AgentSkill[] }>> {
+export async function listAgentSkills(toolInput = "all", tools: ToolAdapter[] = toolAdapters): Promise<Array<{ tool: string; path: string; paths: string[]; skills: AgentSkill[] }>> {
   const selected = toolInput === "all" ? tools : [tools.find((adapter) => adapter.key === toolInput) || getTool(toolInput)];
-  const results: Array<{ tool: string; path: string; skills: AgentSkill[] }> = [];
+  const results: Array<{ tool: string; path: string; paths: string[]; skills: AgentSkill[] }> = [];
   for (const tool of selected) {
-    const skills: AgentSkill[] = [];
-    let entries;
-    try {
-      entries = await readdir(tool.skillsDir, { withFileTypes: true });
-    } catch {
-      results.push({ tool: tool.key, path: tool.skillsDir, skills });
-      continue;
+    const skillsByName = new Map<string, AgentSkill>();
+    const locations = getToolSkillLocations(tool);
+    for (const location of locations) {
+      const skillsDir = location.path;
+      let entries;
+      try {
+        entries = await readdir(skillsDir, { withFileTypes: true });
+      } catch {
+        continue;
+      }
+      for (const entry of entries) {
+        if ((!entry.isDirectory() && !entry.isSymbolicLink()) || entry.name.startsWith(".")) continue;
+        const dir = join(skillsDir, entry.name);
+        const skillFile = await findSkillFile(dir);
+        if (!skillFile) continue;
+        const meta = await readSkillMetadata(skillFile);
+        const name = slug(meta.name || entry.name);
+        if (!skillsByName.has(name)) {
+          skillsByName.set(name, { tool: tool.key, name, description: meta.description, path: dir, scope: location.scope, editable: location.editable });
+        }
+      }
     }
-    for (const entry of entries) {
-      if ((!entry.isDirectory() && !entry.isSymbolicLink()) || entry.name.startsWith(".")) continue;
-      const dir = join(tool.skillsDir, entry.name);
-      const skillFile = await findSkillFile(dir);
-      if (!skillFile) continue;
-      const meta = await readSkillMetadata(skillFile);
-      skills.push({
-        tool: tool.key,
-        name: slug(meta.name || entry.name),
-        description: meta.description,
-        path: dir,
-      });
-    }
+    const skills = [...skillsByName.values()];
     skills.sort((a, b) => a.name.localeCompare(b.name));
-    results.push({ tool: tool.key, path: tool.skillsDir, skills });
+    const skillPaths = locations.map((location) => location.path);
+    results.push({ tool: tool.key, path: skillPaths.join(", "), paths: skillPaths, skills });
   }
   return results;
 }
 
-async function addSkillsFromDirectory(skillsDir: string, label: string, options: { requireAny?: boolean } = {}): Promise<SkillRow[]> {
+export async function readAgentSkillMarkdown(skill: AgentSkill): Promise<string> {
+  const file = await findSkillFile(skill.path);
+  assertUsage(file, `Skill document not found: ${skill.name}`);
+  return readFile(file, "utf8");
+}
+
+async function addSkillsFromTool(tool: ToolAdapter, options: { requireAny?: boolean; presetName?: string } = {}): Promise<SkillRow[]> {
+  const existingDirs = [];
+  for (const skillsDir of getToolSkillsDirs(tool)) {
+    if (await pathExists(skillsDir)) existingDirs.push(skillsDir);
+  }
+  assertUsage(existingDirs.length > 0, `${tool.displayName} skills directories do not exist: ${getToolSkillsDirs(tool).join(", ")}`);
+  const imported = new Map<string, SkillRow>();
+  for (const skillsDir of existingDirs) {
+    const importOptions = { requireAny: false, ...(options.presetName ? { presetName: options.presetName } : {}) };
+    for (const skill of await addSkillsFromDirectory(skillsDir, tool.displayName, importOptions)) imported.set(skill.name, skill);
+  }
+  assertUsage(options.requireAny === false || imported.size > 0, `No skills found in ${existingDirs.join(", ")}. Expected direct child directories with SKILL.md or skill.md.`);
+  return [...imported.values()];
+}
+
+async function addSkillsFromDirectory(skillsDir: string, label: string, options: { requireAny?: boolean; presetName?: string } = {}): Promise<SkillRow[]> {
   const requireAny = options.requireAny ?? true;
   assertUsage(await pathExists(skillsDir), `${label} skills directory does not exist: ${skillsDir}`);
   const entries = await readdir(skillsDir, { withFileTypes: true });
@@ -153,8 +184,8 @@ async function addSkillsFromDirectory(skillsDir: string, label: string, options:
     if (!(await findSkillFile(dir))) continue;
     const existingManagedDir = await managedSymlinkTarget(dir);
     const skill = existingManagedDir
-      ? await importCandidate({ dir: existingManagedDir, skillFile: (await findSkillFile(existingManagedDir))! }, { sourceType: "local" }, { copy: false })
-      : await addSkill(dir);
+      ? await importCandidate({ dir: existingManagedDir, skillFile: (await findSkillFile(existingManagedDir))! }, { sourceType: "local" }, { copy: false, ...(options.presetName ? { presetName: options.presetName } : {}) })
+      : await addSkill(dir, options.presetName);
     await linkManagedSkillToSource(skill, dir);
     imported.push(skill);
   }
@@ -215,7 +246,7 @@ async function resolveGitImport(source: string): Promise<{ root: string; importS
   };
 }
 
-async function importCandidate(candidate: SkillCandidate, source: SkillImportSource, options: { copy?: boolean } = {}): Promise<SkillRow> {
+async function importCandidate(candidate: SkillCandidate, source: SkillImportSource, options: { copy?: boolean; presetName?: string } = {}): Promise<SkillRow> {
   const meta = await readSkillMetadata(candidate.skillFile);
   const name = slug(meta.name || basename(candidate.dir));
   const target = join(paths().skillsDir, name);
@@ -244,7 +275,7 @@ async function importCandidate(candidate: SkillCandidate, source: SkillImportSou
     source.commitSha || null,
   );
   const skill = db.query("SELECT * FROM skills WHERE name = ?").get(name) as SkillRow;
-  await addSkillToPreset(skill.id);
+  await addSkillToPreset(skill.id, options.presetName);
   return skill;
 }
 
@@ -257,24 +288,42 @@ export async function addSkillToPreset(skillId: number, presetName = "Default"):
 
 export async function listSkills(): Promise<SkillRow[]> {
   const db = await openDb();
-  return db.query("SELECT * FROM skills ORDER BY name").all() as SkillRow[];
+  const skills = db.query("SELECT * FROM skills ORDER BY name").all() as SkillRow[];
+  return Promise.all(skills.map(refreshSkillMetadata));
 }
 
 export async function getSkill(name: string): Promise<SkillRow | null> {
   const db = await openDb();
-  return (db.query("SELECT * FROM skills WHERE name = ?").get(name) as SkillRow | null) || null;
+  const skill = (db.query("SELECT * FROM skills WHERE name = ?").get(name) as SkillRow | null) || null;
+  return skill ? refreshSkillMetadata(skill) : null;
+}
+
+async function refreshSkillMetadata(skill: SkillRow): Promise<SkillRow> {
+  try {
+    const skillFile = await findSkillFile(skill.path);
+    if (!skillFile) return skill;
+    const metadata = await readSkillMetadata(skillFile);
+    if (metadata.description === skill.description) return skill;
+    const db = await openDb();
+    db.query("UPDATE skills SET description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(metadata.description, skill.id);
+    return db.query("SELECT * FROM skills WHERE id = ?").get(skill.id) as SkillRow;
+  } catch {
+    return skill;
+  }
 }
 
 export async function findSkillAgentLinks(skill: SkillRow, tools: ToolAdapter[] = toolAdapters): Promise<SkillAgentLink[]> {
   const target = await realpath(skill.path).catch(() => resolve(skill.path));
   const links: SkillAgentLink[] = [];
   for (const tool of tools) {
-    const path = join(tool.skillsDir, skill.name);
-    try {
-      if (!(await lstat(path)).isSymbolicLink()) continue;
-      if ((await realpath(path)) === target) links.push({ tool: tool.key, path });
-    } catch {
-      continue;
+    for (const skillsDir of getToolSkillsDirs(tool)) {
+      const path = join(skillsDir, skill.name);
+      try {
+        if (!(await lstat(path)).isSymbolicLink()) continue;
+        if ((await realpath(path)) === target) links.push({ tool: tool.key, path });
+      } catch {
+        continue;
+      }
     }
   }
   return links;
@@ -303,9 +352,10 @@ export async function removeSkillAgentLink(
   if (!skill) throw new Error(`Skill not found: ${name}`);
   const tool = tools.find((adapter) => adapter.key === toolInput);
   if (!tool) throw new Error(`Unknown tool: ${toolInput}. Expected one of: ${tools.map((adapter) => adapter.key).join(", ")}`);
-  const [agentLink] = await findSkillAgentLinks(skill, [tool]);
+  const agentLinks = await findSkillAgentLinks(skill, [tool]);
+  const [agentLink] = agentLinks;
   if (!agentLink) throw new Error(`${tool.displayName} does not have a managed symlink for skill: ${name}`);
-  await removePath(agentLink.path);
+  for (const link of agentLinks) await removePath(link.path);
   return { skill, agentLink };
 }
 
@@ -338,7 +388,7 @@ export async function readSkillMetadata(skillFile: string): Promise<{ name: stri
 }
 
 function parseSkillMetadata(text: string): { name: string | null; description: string | null } {
-  const frontmatter = text.match(/^---\n([\s\S]*?)\n---/);
+  const frontmatter = text.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
   if (!frontmatter?.[1]) return { name: null, description: null };
   return {
     name: readYamlScalar(frontmatter[1], "name") || null,
@@ -347,8 +397,51 @@ function parseSkillMetadata(text: string): { name: string | null; description: s
 }
 
 function readYamlScalar(text: string, key: string): string | undefined {
-  const match = text.match(new RegExp(`^${key}:\\s*(.+)$`, "m"));
-  return match?.[1]?.trim().replace(/^["']|["']$/g, "");
+  const lines = text.split(/\r?\n/);
+  const keyPattern = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const index = lines.findIndex((line) => new RegExp(`^${keyPattern}:\\s*(.*)$`).test(line));
+  if (index < 0) return undefined;
+
+  const value = lines[index]!.match(new RegExp(`^${keyPattern}:\\s*(.*)$`))?.[1]?.trim() || "";
+  const block = value.match(/^([>|])([+-])?(?:\s+#.*)?$/);
+  if (!block) return unquoteYamlScalar(value);
+
+  const blockLines: string[] = [];
+  let contentIndent: number | undefined;
+  for (const line of lines.slice(index + 1)) {
+    if (line.trim().length === 0) {
+      blockLines.push("");
+      continue;
+    }
+    const indent = line.match(/^ +/)?.[0].length || 0;
+    if (indent === 0) break;
+    contentIndent ??= indent;
+    if (indent < contentIndent) break;
+    blockLines.push(line.slice(contentIndent));
+  }
+  while (blockLines.at(-1) === "") blockLines.pop();
+  return block[1] === "|" ? blockLines.join("\n") : foldYamlLines(blockLines);
+}
+
+function foldYamlLines(lines: string[]): string {
+  let result = "";
+  let blankLines = 0;
+  for (const line of lines) {
+    if (line.length === 0) {
+      blankLines += 1;
+      continue;
+    }
+    if (result) result += blankLines > 0 ? "\n".repeat(blankLines) : " ";
+    result += line;
+    blankLines = 0;
+  }
+  return result;
+}
+
+function unquoteYamlScalar(value: string): string {
+  const quote = value[0];
+  if ((quote === '"' || quote === "'") && value.at(-1) === quote) return value.slice(1, -1);
+  return value;
 }
 
 export function slug(input: string): string {

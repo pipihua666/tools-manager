@@ -6,6 +6,7 @@ export type AgentOverview = {
   tool: string;
   displayName: string;
   skillsPath: string;
+  skillsPaths: string[];
   mcpPath: string;
   skills: AgentSkill[];
   mcpServers: McpServer[];
@@ -23,6 +24,7 @@ export async function listAgentOverview(toolInput = "all", tools?: ToolAdapter[]
       tool: tool.key,
       displayName: tool.displayName,
       skillsPath: toolSkills?.path || tool.skillsDir,
+      skillsPaths: toolSkills?.paths || [tool.skillsDir],
       mcpPath: toolMcp?.path || tool.mcpPath,
       skills: toolSkills?.skills || [],
       mcpServers: toolMcp?.servers || [],

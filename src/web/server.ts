@@ -6,14 +6,16 @@ import {
   addLocalAgentSkills,
   addSkills,
   findSkillAgentLinks,
+  listAgentSkills,
   getSkill,
   listSkills,
   readSkillMarkdown,
+  readAgentSkillMarkdown,
   removeSkill,
   removeSkillAgentLink,
   updateSkillMarkdown,
 } from "../core/skill";
-import { applyPreset, getPresetSkills, listPresets, moveSkillPreset, removeSkillFromPreset, syncSkill, type SyncMode } from "../core/preset";
+import { applyPreset, createPreset, getPresetSkills, listPresets, moveSkillsPreset, removeSkillsFromPreset, syncSkill, type SyncMode } from "../core/preset";
 import {
   addMcpServer,
   getMcpServer,
@@ -121,6 +123,15 @@ async function handleRequest(request: Request, token: string, hostname: string, 
 
   try {
     if (request.method === "GET" && url.pathname === "/api/snapshot") return json(await snapshot());
+    if (request.method === "GET" && url.pathname.startsWith("/api/agent-skills/")) {
+      const [tool, name] = pathParts(url.pathname, "/api/agent-skills/", 2);
+      const selectedTool = optionalTool(tool);
+      if (selectedTool === "all") throw new Error("Select one Agent.");
+      const result = await listAgentSkills(selectedTool);
+      const skill = result[0]?.skills.find((item) => item.name === name);
+      if (!skill) return json({ error: `Agent skill not found: ${name}` }, 404);
+      return json({ skill, markdown: await readAgentSkillMarkdown(skill) });
+    }
     if (request.method === "GET" && url.pathname.startsWith("/api/skills/")) {
       const name = pathTail(url.pathname, "/api/skills/");
       const skill = await getSkill(name);
@@ -129,11 +140,11 @@ async function handleRequest(request: Request, token: string, hostname: string, 
     }
     if (request.method === "POST" && url.pathname === "/api/skills/import") {
       const body = await readBody(request);
-      return json({ skills: await addSkills(requiredString(body, "source")) }, 201);
+      return json({ skills: await addSkills(requiredString(body, "source"), optionalPreset(body.preset)) }, 201);
     }
     if (request.method === "POST" && url.pathname === "/api/skills/import-agent") {
       const body = await readBody(request);
-      return json({ results: await addLocalAgentSkills(optionalTool(body.tool)) }, 201);
+      return json({ results: await addLocalAgentSkills(optionalTool(body.tool), toolAdapters, optionalPreset(body.preset)) }, 201);
     }
     if (request.method === "POST" && url.pathname === "/api/skills/sync-selected") {
       const body = await readBody(request);
@@ -152,6 +163,10 @@ async function handleRequest(request: Request, token: string, hostname: string, 
       if (tool !== "all") return json(await removeSkillAgentLink(name, tool));
       return json(await removeSkill(name, { removeAgentLinks: true }));
     }
+    if (request.method === "POST" && url.pathname === "/api/presets") {
+      const body = await readBody(request);
+      return json({ preset: await createPreset(requiredString(body, "name")) }, 201);
+    }
     if (request.method === "POST" && url.pathname === "/api/presets/apply") {
       const body = await readBody(request);
       const mode = optionalSyncMode(body.mode);
@@ -159,11 +174,11 @@ async function handleRequest(request: Request, token: string, hostname: string, 
     }
     if (request.method === "POST" && url.pathname === "/api/presets/move-skill") {
       const body = await readBody(request);
-      return json(await moveSkillPreset(requiredString(body, "skill"), requiredString(body, "from"), requiredString(body, "to")));
+      return json(await moveSkillsPreset(requiredSkillNames(body), requiredString(body, "from"), requiredString(body, "to")));
     }
     if (request.method === "POST" && url.pathname === "/api/presets/remove-skill") {
       const body = await readBody(request);
-      return json(await removeSkillFromPreset(requiredString(body, "skill"), requiredString(body, "preset")));
+      return json(await removeSkillsFromPreset(requiredSkillNames(body), requiredString(body, "preset")));
     }
     if (request.method === "POST" && url.pathname === "/api/mcp") {
       const server = parseMcpServer(await readBody(request));
@@ -233,6 +248,8 @@ async function snapshot() {
   })));
   const skillDetails = await Promise.all(skills.map(async (skill) => ({
     ...skill,
+    scope: "user" as const,
+    editable: true,
     agentLinks: await findSkillAgentLinks(skill),
   })));
   return {
@@ -246,8 +263,18 @@ async function snapshot() {
     })),
     agents: agents.map((agent) => ({
       ...agent,
-      skills: agent.skills.map((skill) => ({ name: skill.name })),
-      mcpServers: agent.mcpServers.map((server) => ({ name: server.name })),
+      skills: agent.skills.map((skill) => ({
+        name: skill.name,
+        description: skill.description,
+        path: skill.path,
+        scope: skill.scope,
+        editable: skill.editable,
+      })),
+      mcpServers: agent.mcpServers.map(({ env, headers, ...server }) => ({
+        ...server,
+        envKeys: Object.keys(env),
+        headerKeys: Object.keys(headers),
+      })),
     })),
   };
 }
@@ -274,12 +301,23 @@ function optionalTool(value: unknown): string {
   return value;
 }
 
+function optionalPreset(value: unknown): string {
+  if (value === undefined || value === null || value === "") return "Default";
+  if (typeof value !== "string" || !value.trim()) throw new Error("Preset must be a non-empty string.");
+  return value.trim();
+}
+
 function requiredNames(body: JsonRecord): string[] {
   const value = body.names;
   if (!Array.isArray(value) || value.length === 0 || !value.every((name) => typeof name === "string" && name.trim())) {
     throw new Error("Select at least one resource.");
   }
   return [...new Set(value.map((name) => name.trim()))];
+}
+
+function requiredSkillNames(body: JsonRecord): string[] {
+  if (Array.isArray(body.names)) return requiredNames(body);
+  return [requiredString(body, "skill")];
 }
 
 function optionalSyncMode(value: unknown): SyncMode | undefined {
@@ -341,6 +379,12 @@ function pathTail(pathname: string, prefix: string): string {
   const value = decodeURIComponent(pathname.slice(prefix.length));
   if (!value || value.includes("/")) throw new Error("Invalid resource name.");
   return value;
+}
+
+function pathParts(pathname: string, prefix: string, count: number): string[] {
+  const parts = pathname.slice(prefix.length).split("/").map(decodeURIComponent);
+  if (parts.length !== count || parts.some((part) => !part)) throw new Error("Invalid resource path.");
+  return parts;
 }
 
 function isCrossSite(request: Request, hostname: string, port: number): boolean {

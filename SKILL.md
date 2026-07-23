@@ -16,7 +16,7 @@ Use this skill when working with the `tm` CLI or the `tools-manager` repository.
   - Claude Code: `~/.claude/skills`
   - Cursor: `~/.cursor/skills`
   - OpenCode: `~/.config/opencode/skills`
-- `Default` is created automatically and imported skills are added to it.
+- `Default` is created automatically. Imported skills are added to it unless `--preset <name>` selects another preset.
 - `sync_mode` defaults to `symlink`; command flags can override it per run.
 
 ## Common Workflows
@@ -37,14 +37,15 @@ tm web --port 4400
 tm web --no-open
 ```
 
-The dashboard binds to `127.0.0.1` and provides browser-based management for the same skills, presets, MCP, Agent sync, and backup operations. The `All` resource views support row sync, multi-select, and select-all sync. Clicking a skill or MCP name opens its full editable content.
+The dashboard binds to `127.0.0.1` and provides browser-based management for the same skills, presets, MCP, Agent sync, and backup operations. The `All` resource views support row sync, multi-select, and select-all sync. Agent filters include the complete installed inventory; unmanaged names open read-only details without mutation actions. Searches run when submitted by button or Enter. Agent Readiness shows synced and installed counts. Clicking a managed skill or MCP name opens its full editable content.
 
 Import skills into tm:
 
 ```bash
 tm skills add ./path/to/skill
+tm skills add ./path/to/work-skill --preset Work
 tm skills add 'git@example.com:group/repo.git#main:path/to/skill'
-tm skills add --tool codex
+tm skills add --tool codex --preset Work
 tm skills add --tool all
 ```
 
@@ -61,6 +62,7 @@ tm skills sync-selected <skill-a> <skill-b> --tool codex --mode symlink
 Apply presets to agents:
 
 ```bash
+tm presets create Work
 tm presets apply Default --tool all --mode symlink
 tm presets apply Work --tool cursor --mode copy
 ```
@@ -71,11 +73,13 @@ Move preset membership:
 
 ```bash
 tm presets move-skill <skill> Default Work
+tm presets move-skills Default Work <skill-a> <skill-b>
 tm presets remove-skill <skill> Work
+tm presets remove-skills Work <skill-a> <skill-b>
 tm presets move Default Work
 ```
 
-Use `move-skill` for one skill. Use `remove-skill` to keep the managed skill while removing only its preset membership. Use `move` only when moving all skills from one preset to another.
+Use `move-skill` and `remove-skill` for compatibility with one-skill scripts. Use their plural forms for batch changes; the interactive menu and Web dashboard expose checkbox multi-select. Removing membership keeps the managed skills. Use `move` only when moving all skills from one preset to another.
 
 Manage MCP records:
 

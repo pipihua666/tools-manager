@@ -2,17 +2,15 @@
 
 [中文文档](README.zh-CN.md)
 
-Tools Manager (`tm`) is a Bun-powered CLI for managing AI agent skills and MCP server configuration across Codex, Claude Code, Cursor, and OpenCode.
+Tools Manager (`tm`) is a Bun-powered local management tool for AI agent skills and MCP server configuration across Codex, Claude Code, Cursor, and OpenCode.
 
 It gives you one local source of truth for:
 
-- Skills stored under `~/.tools-manager/skills`
-- Skill presets that group skills for different agents or workflows
-- MCP servers stored in the Tools Manager database and synced into agent config files
+* Skills stored under `~/.tools-manager/skills`
+* Skill presets that group skills for different agents or workflows
+* MCP servers stored in the Tools Manager database and synced into agent config files
 
-Open `tm` with no arguments when you want a guided command picker instead of remembering every subcommand:
-
-![Tools Manager interactive menu](docs/images/menu.svg)
+**The Web dashboard is the recommended interface for daily use.** Run `tm web` after installation to open it.
 
 The diagram below shows how skills and MCP servers move between local agents and the Tools Manager store:
 
@@ -20,8 +18,8 @@ The diagram below shows how skills and MCP servers move between local agents and
 
 ## Requirements
 
-- Bun `>= 1.3.0`
-- Git, for importing skills from Git URLs and running `tm backup`
+* Bun `>= 1.3.0`
+* Git, for importing skills from Git URLs and running `tm backup`
 
 ## Installation
 
@@ -39,32 +37,25 @@ tm status
 
 For source checkout usage, see [Development](#development).
 
-
 ## Quick Start
 
-Import all existing local agent skills into Tools Manager, then sync them back to all supported agents:
+Initialize Tools Manager, then open the Web dashboard:
 
 ```bash
 # Create the Tools Manager home directory and default config.
 tm init
 
-# Import existing skills from Codex, Claude Code, Cursor, and OpenCode.
-tm skills add --tool all
-
-# Show the skills now managed by Tools Manager.
-tm skills list
-
-# Apply the default skill preset to all supported agents.
-tm presets apply Default
+# Start the dashboard and open it in your browser.
+tm web
 ```
+
+From the dashboard, you can import existing Agent skills, manage presets and MCP servers, and sync selected resources back to target Agents.
 
 If you have not linked or installed the package yet, use:
 
 ```bash
 bun run tm init
-bun run tm skills add --tool all
-bun run tm skills list
-bun run tm presets apply Default
+bun run tm web
 ```
 
 By default, Tools Manager writes state to:
@@ -75,14 +66,6 @@ By default, Tools Manager writes state to:
 
 Set `TOOLS_MANAGER_HOME` to use a custom manager root.
 
-Run `tm` with no arguments to open an interactive command menu:
-
-```bash
-tm
-```
-
-The menu lets you choose common skill, skill preset, MCP, agent, and backup commands with arrow keys. It includes manual add flows for skill sources and MCP servers, plus import flows from existing agents. Tool parameters use an option picker with `all` selected by default. After a command runs, press `Enter` or `Esc` to return to the menu.
-
 ## Web Dashboard
 
 Start the local management dashboard and open it in your browser:
@@ -91,9 +74,17 @@ Start the local management dashboard and open it in your browser:
 tm web
 ```
 
-The dashboard manages skills, presets, MCP servers, Agent imports and sync operations, and Git backups through the same core APIs as the CLI. The `All` skill and MCP views support per-row sync, multi-select, and select-all sync. Agent-filtered skill removal only removes that Agent's managed symlink.
+![Tools Manager Web dashboard](docs/images/web-dashboard.png)
 
-Click a skill name to inspect its source metadata and edit the complete `SKILL.md`. Click an MCP server name to edit its name, transport, command or URL, arguments, environment, HTTP headers, target tools, and enabled state. MCP environment and header values are available only through the local detail endpoint and are omitted from the dashboard snapshot.
+The dashboard manages skills, presets, MCP servers, Agent imports and sync operations, and Git backups through the same core APIs as the CLI.
+
+* Skill imports can target a preset and default to `Default`.
+* The Skills and MCP views provide submitted search by button or Enter; their `All` views also support per-row sync, multi-select, and select-all sync.
+* Agent filters show the Agent's complete installed inventory: managed resources remain actionable, while unmanaged names open read-only details without edit, sync, or remove actions.
+* Agent Readiness reports `synced / installed` counts.
+* Click a skill name to inspect its source metadata and edit the complete `SKILL.md`.
+* Click an MCP server name to edit its name, transport, command or URL, arguments, environment, HTTP headers, target tools, and enabled state.
+* MCP environment and header values are available only through the local detail endpoint and are omitted from the dashboard snapshot.
 
 The server binds to `127.0.0.1` only. It uses port `4343` by default and tries the next available local port when needed. To select a port or avoid opening a browser automatically:
 
@@ -104,24 +95,48 @@ tm web --no-open
 
 Keep the terminal process running while using the dashboard. Press `Ctrl+C` to stop it.
 
-For local source development, start the watched server:
+For local source development, start the watched Web server:
 
 ```bash
-bun run dev
+bun run web
 ```
 
 Open `http://127.0.0.1:4343` once. Bun restarts the server when imported source files change, and the open dashboard reloads itself after the new server is ready. Use a temporary manager root when you want isolated test data:
 
 ```bash
-TOOLS_MANAGER_HOME=/tmp/tools-manager-dev bun run dev
+TOOLS_MANAGER_HOME=/tmp/tools-manager-dev bun run web
 ```
 
+## Command Line
+
+Use the CLI for scripting or terminal-first workflows. The following commands import existing skills from every local Agent and sync the Default preset back to all supported Agents:
+
+```bash
+tm init
+tm skills add --tool all
+tm skills list
+tm presets apply Default
+```
+
+Run `tm` with no arguments to open the interactive command menu when you prefer a guided terminal workflow:
+
+```bash
+tm
+```
+
+![Tools Manager CLI interactive menu](docs/images/cli.png)
+
+The menu lets you choose common skill, skill preset, MCP, agent, and backup commands with arrow keys. It includes manual add flows for skill sources and MCP servers, plus import flows from existing agents. Tool parameters use an option picker with `all` selected by default. After a command runs, press `Enter` or `Esc` to return to the menu.
+
 ## Skills
+
+### Import skills
 
 Add a local skill directory:
 
 ```bash
 tm skills add ./my-skill
+tm skills add ./work-skill --preset Work
 ```
 
 Add existing skills from one local agent:
@@ -141,6 +156,8 @@ tm skills add --tool all
 
 Agent imports copy skills into `~/.tools-manager/skills`, then replace the original local agent skill directories with symlinks to the managed copies.
 
+Codex and Claude Code both support the shared `~/.agents/skills` directory while retaining their respective `~/.codex/skills` and `~/.claude/skills` locations. Import, listing, sync, and unlink operations cover these directories; a skill with the same name is shown once in listings and import results.
+
 Import a skill from Git:
 
 ```bash
@@ -150,6 +167,8 @@ tm skills add 'git@gitlab.company.com:group/repo.git#main:path/to/skill'
 If the source contains multiple skill directories, all discovered skills are imported. Existing skills with the same name are updated.
 
 See [Remote Skill Repositories](docs/remote-skill-repositories.md) for the expected repository layout.
+
+### Inspect skills
 
 List managed skills:
 
@@ -170,6 +189,8 @@ Show one managed skill:
 tm skills show my-skill
 ```
 
+### Remove skills
+
 Remove a managed skill:
 
 ```bash
@@ -187,6 +208,8 @@ Remove only one Agent's managed symlink while keeping the tm source, preset memb
 ```bash
 tm skills unlink my-skill --tool codex
 ```
+
+### Sync skills
 
 Sync one or more selected skills to agent skill directories:
 
@@ -212,6 +235,14 @@ Skill presets are named groups of skills. They help you decide which skills shou
 
 For example, you can keep everyday skills in `Default`, and work-only skills in `Work`. Imported skills are added to `Default` automatically.
 
+### Create and apply presets
+
+Create an empty skill preset:
+
+```bash
+tm presets create Work
+```
+
 List skill presets:
 
 ```bash
@@ -225,16 +256,20 @@ tm presets apply Default
 tm presets apply Work --tool cursor --mode copy
 ```
 
-Move one skill from one preset to another:
+### Change preset membership
+
+Move one or more skills from one preset to another:
 
 ```bash
 tm presets move-skill my-skill Default Work
+tm presets move-skills Default Work skill-a skill-b
 ```
 
-Remove one skill from a preset without deleting the managed skill or Agent links:
+Remove one or more skills from a preset without deleting the managed skills or Agent links:
 
 ```bash
 tm presets remove-skill my-skill Work
+tm presets remove-skills Work skill-a skill-b
 ```
 
 Move all skills from one skill preset to another:
@@ -246,6 +281,8 @@ tm presets move Default Work
 After changing preset membership, use `tm presets apply` to write the current group to Agent skill directories.
 
 ## MCP Servers
+
+### Add and import MCP servers
 
 Add an MCP server to Tools Manager:
 
@@ -262,6 +299,8 @@ Add existing MCP servers from agent config files:
 tm mcp add --tool codex
 tm mcp add --tool all
 ```
+
+### Inspect and remove MCP servers
 
 List managed MCP servers:
 
@@ -288,6 +327,8 @@ Remove a managed MCP server:
 tm mcp remove playwright
 ```
 
+### Sync MCP servers
+
 Sync managed MCP servers back to agent config files:
 
 ```bash
@@ -306,17 +347,17 @@ The interactive `tm` menu supports multi-select and select-all for this command.
 
 Defaults:
 
-- `tm mcp sync` uses `--tool all`
-- Sync creates timestamped backups before writing config files
+* `tm mcp sync` uses `--tool all`
+* Sync creates timestamped backups before writing config files
 
 Supported config targets:
 
-```text
-codex       -> ~/.codex/config.toml
-claude_code -> ~/.claude/mcp.json
-cursor      -> ~/.cursor/mcp.json
-opencode    -> ~/.config/opencode/opencode.json
-```
+| Agent         | MCP config                         |
+| ------------- | ---------------------------------- |
+| `codex`       | `~/.codex/config.toml`             |
+| `claude_code` | `~/.claude/mcp.json`               |
+| `cursor`      | `~/.cursor/mcp.json`               |
+| `opencode`    | `~/.config/opencode/opencode.json` |
 
 ## Backup
 
@@ -335,8 +376,8 @@ tm init
 tm web [--port <port>] [--no-open] [--dev]
 tm status [--json]
 tm agents list [--tool <tool|all>] [--json]
-tm skills add <source>
-tm skills add --tool <tool|all>
+tm skills add <source> [--preset <name>]
+tm skills add --tool <tool|all> [--preset <name>]
 tm skills list [--json]
 tm skills list --tool <tool|all> [--json]
 tm skills show <name> [--json]
@@ -344,10 +385,13 @@ tm skills remove <name> [--yes]
 tm skills unlink <name> --tool <codex|claude_code|cursor|opencode>
 tm skills sync-selected <name...> [--tool <tool|all>] [--mode <symlink|copy>]
 tm skills sync [preset] [--tool <tool|all>] [--mode <symlink|copy>]
+tm presets create <name>
 tm presets list [--json]
 tm presets apply [preset] [--tool <tool|all>] [--mode <symlink|copy>]
 tm presets move-skill <skill> <from> <to>
+tm presets move-skills <from> <to> <skill...>
 tm presets remove-skill <skill> <preset>
+tm presets remove-skills <preset> <skill...>
 tm presets move <from> <to>
 tm mcp add <name> (--command <cmd> [--arg value] [--env K=V] | --url <url> [--header K=V]) [--tool <tool|all>]
 tm mcp add --tool <tool|all>
@@ -372,6 +416,8 @@ all
 
 ## Development
 
+### Install and check
+
 Install dependencies and run checks:
 
 ```bash
@@ -381,12 +427,16 @@ bun run check
 
 This repository pins npm and Bun installs to the npmmirror registry through `.npmrc` and `bunfig.toml`.
 
+### Run from source
+
 Run the CLI through the package script:
 
 ```bash
 bun run tm status
 bun run tm skills list
 ```
+
+### Build and verify the package
 
 Build the publishable CLI bundle:
 
@@ -408,6 +458,8 @@ npm unlink -g tools-manager
 
 ## Publishing
 
+### Review the package
+
 Before publishing:
 
 ```bash
@@ -416,12 +468,14 @@ bun run release:dry
 
 Review the dry-run output. It should include only:
 
-- `package.json`
-- `README.md`
-- `README.zh-CN.md`
-- `SKILL.md`
-- `dist/**`
-- `docs/**`
+* `package.json`
+* `README.md`
+* `README.zh-CN.md`
+* `SKILL.md`
+* `dist/**`
+* `docs/**`
+
+### Publish a release
 
 Publish:
 
@@ -447,9 +501,9 @@ tm status
 
 ## Notes
 
-- `tm skills add` supports local folders, GitHub URLs, internal GitLab URLs, SSH Git URLs, and `#ref:path/to/skill`.
-- Git authentication is delegated to your local Git setup: SSH keys, VPN, credential helpers, and tokens. Private HTTPS repositories with 2FA need a personal access token, or use an SSH Git URL.
-- `tm skills add --codex` and `tm skills add --all` are kept as compatibility aliases.
-- `tm skills remove` deletes the managed skill files, removes preset membership, and removes agent symlinks that point to the managed source after confirmation.
-- `tm mcp remove` deletes the server from Tools Manager; run `tm mcp sync` to update agent config files.
-- `--json` is available on list/status-style commands for scripting.
+* `tm skills add` supports local folders, GitHub URLs, internal GitLab URLs, SSH Git URLs, and `#ref:path/to/skill`.
+* Git authentication is delegated to your local Git setup: SSH keys, VPN, credential helpers, and tokens. Private HTTPS repositories with 2FA need a personal access token, or use an SSH Git URL.
+* `tm skills add --codex` and `tm skills add --all` are kept as compatibility aliases.
+* `tm skills remove` deletes the managed skill files, removes preset membership, and removes agent symlinks that point to the managed source after confirmation.
+* `tm mcp remove` deletes the server from Tools Manager; run `tm mcp sync` to update agent config files.
+* `--json` is available on list/status-style commands for scripting.

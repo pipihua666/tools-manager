@@ -5,8 +5,8 @@ import { readConfig } from "./config";
 import { syncDir } from "./fs";
 import { managerRoot } from "./paths";
 import { getSkill } from "./skill";
-import { toolAdapters, resolveTools, type ToolAdapter } from "./tools";
-import { UsageError } from "./errors";
+import { getToolSkillsDirs, toolAdapters, resolveTools, type ToolAdapter } from "./tools";
+import { assertUsage, UsageError } from "./errors";
 
 export type PresetSummary = PresetRow & {
   skill_count: number;
@@ -23,6 +23,21 @@ export async function listPresets(): Promise<PresetSummary[]> {
     GROUP BY p.id
     ORDER BY p.name
   `).all() as PresetSummary[];
+}
+
+export async function createPreset(input: string): Promise<PresetSummary> {
+  const name = input.trim();
+  assertUsage(name.length > 0, "Preset name cannot be empty.");
+  assertUsage(name.length <= 80, "Preset name must be 80 characters or fewer.");
+  const db = await openDb();
+  const existing = db.query("SELECT name FROM presets WHERE name = ? COLLATE NOCASE").get(name) as { name: string } | null;
+  assertUsage(!existing, `Preset already exists: ${existing?.name || name}`);
+  db.query("INSERT INTO presets (name) VALUES (?)").run(name);
+  return db.query(`
+    SELECT p.*, 0 AS skill_count
+    FROM presets p
+    WHERE p.name = ?
+  `).get(name) as PresetSummary;
 }
 
 export async function getPresetSkills(presetName: string): Promise<SkillRow[]> {
@@ -55,30 +70,63 @@ export async function movePreset(fromName: string, toName: string): Promise<{ fr
 }
 
 export async function moveSkillPreset(skillName: string, fromName: string, toName: string): Promise<{ skill: string; from: string; to: string }> {
+  const result = await moveSkillsPreset([skillName], fromName, toName);
+  return { skill: result.skills[0]!, from: result.from, to: result.to };
+}
+
+export async function moveSkillsPreset(skillNames: string[], fromName: string, toName: string): Promise<{ skills: string[]; from: string; to: string; count: number }> {
   const db = await openDb();
-  const skill = db.query("SELECT id, name FROM skills WHERE name = ?").get(skillName) as { id: number; name: string } | null;
-  if (!skill) throw new Error(`Skill not found: ${skillName}`);
+  const names = normalizeSkillNames(skillNames);
+  assertUsage(fromName !== toName, "Source and destination presets must be different.");
   const from = db.query("SELECT id FROM presets WHERE name = ?").get(fromName) as { id: number } | null;
   if (!from) throw new Error(`Preset not found: ${fromName}`);
-  const membership = db.query("SELECT 1 FROM preset_skills WHERE preset_id = ? AND skill_id = ?").get(from.id, skill.id);
-  if (!membership) throw new Error(`Skill ${skillName} is not in preset ${fromName}`);
+  const skills = names.map((name) => {
+    const skill = db.query("SELECT id, name FROM skills WHERE name = ?").get(name) as { id: number; name: string } | null;
+    if (!skill) throw new Error(`Skill not found: ${name}`);
+    const membership = db.query("SELECT 1 FROM preset_skills WHERE preset_id = ? AND skill_id = ?").get(from.id, skill.id);
+    if (!membership) throw new Error(`Skill ${name} is not in preset ${fromName}`);
+    return skill;
+  });
 
-  db.query("INSERT OR IGNORE INTO presets (name) VALUES (?)").run(toName);
-  const to = db.query("SELECT id FROM presets WHERE name = ?").get(toName) as { id: number };
-  db.query("INSERT OR IGNORE INTO preset_skills (preset_id, skill_id) VALUES (?, ?)").run(to.id, skill.id);
-  db.query("DELETE FROM preset_skills WHERE preset_id = ? AND skill_id = ?").run(from.id, skill.id);
-  return { skill: skill.name, from: fromName, to: toName };
+  db.transaction(() => {
+    db.query("INSERT OR IGNORE INTO presets (name) VALUES (?)").run(toName);
+    const to = db.query("SELECT id FROM presets WHERE name = ?").get(toName) as { id: number };
+    for (const skill of skills) {
+      db.query("INSERT OR IGNORE INTO preset_skills (preset_id, skill_id) VALUES (?, ?)").run(to.id, skill.id);
+      db.query("DELETE FROM preset_skills WHERE preset_id = ? AND skill_id = ?").run(from.id, skill.id);
+    }
+  })();
+  return { skills: skills.map((skill) => skill.name), from: fromName, to: toName, count: skills.length };
 }
 
 export async function removeSkillFromPreset(skillName: string, presetName: string): Promise<{ skill: string; preset: string }> {
+  const result = await removeSkillsFromPreset([skillName], presetName);
+  return { skill: result.skills[0]!, preset: result.preset };
+}
+
+export async function removeSkillsFromPreset(skillNames: string[], presetName: string): Promise<{ skills: string[]; preset: string; count: number }> {
   const db = await openDb();
-  const skill = db.query("SELECT id, name FROM skills WHERE name = ?").get(skillName) as { id: number; name: string } | null;
-  if (!skill) throw new Error(`Skill not found: ${skillName}`);
+  const names = normalizeSkillNames(skillNames);
   const preset = db.query("SELECT id, name FROM presets WHERE name = ?").get(presetName) as { id: number; name: string } | null;
   if (!preset) throw new Error(`Preset not found: ${presetName}`);
-  const result = db.query("DELETE FROM preset_skills WHERE preset_id = ? AND skill_id = ?").run(preset.id, skill.id);
-  if (result.changes === 0) throw new Error(`Skill ${skillName} is not in preset ${presetName}`);
-  return { skill: skill.name, preset: preset.name };
+  const skills = names.map((name) => {
+    const skill = db.query("SELECT id, name FROM skills WHERE name = ?").get(name) as { id: number; name: string } | null;
+    if (!skill) throw new Error(`Skill not found: ${name}`);
+    const membership = db.query("SELECT 1 FROM preset_skills WHERE preset_id = ? AND skill_id = ?").get(preset.id, skill.id);
+    if (!membership) throw new Error(`Skill ${name} is not in preset ${presetName}`);
+    return skill;
+  });
+
+  db.transaction(() => {
+    for (const skill of skills) db.query("DELETE FROM preset_skills WHERE preset_id = ? AND skill_id = ?").run(preset.id, skill.id);
+  })();
+  return { skills: skills.map((skill) => skill.name), preset: preset.name, count: skills.length };
+}
+
+function normalizeSkillNames(values: string[]): string[] {
+  const names = [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+  assertUsage(names.length > 0, "Select at least one skill.");
+  return names;
 }
 
 export async function applyPreset(presetName: string, toolInput?: string, syncMode?: SyncMode, adapters?: ToolAdapter[]): Promise<Array<{ tool: string; skill: string; mode: string; target: string }>> {
@@ -91,11 +139,15 @@ export async function applyPreset(presetName: string, toolInput?: string, syncMo
   const mode = syncMode || config.syncMode;
   assertNoTempManagerSymlinkToRealAgents(mode, tools);
   const results: Array<{ tool: string; skill: string; mode: string; target: string }> = [];
+  const syncedTargets = new Map<string, string>();
   for (const tool of tools) {
     for (const skill of skills) {
-      const target = join(tool.skillsDir, skill.name);
-      const appliedMode = await syncDir(skill.path, target, mode);
-      results.push({ tool: tool.key, skill: skill.name, mode: appliedMode, target });
+      for (const skillsDir of getToolSkillsDirs(tool)) {
+        const target = join(skillsDir, skill.name);
+        const appliedMode = syncedTargets.get(target) || await syncDir(skill.path, target, mode);
+        syncedTargets.set(target, appliedMode);
+        results.push({ tool: tool.key, skill: skill.name, mode: appliedMode, target });
+      }
     }
   }
   return results;
@@ -109,10 +161,14 @@ export async function syncSkill(skillName: string, toolInput?: string, syncMode?
   const mode = syncMode || config.syncMode;
   assertNoTempManagerSymlinkToRealAgents(mode, tools);
   const results: Array<{ tool: string; skill: string; mode: string; target: string }> = [];
+  const syncedTargets = new Map<string, string>();
   for (const tool of tools) {
-    const target = join(tool.skillsDir, skill.name);
-    const appliedMode = await syncDir(skill.path, target, mode);
-    results.push({ tool: tool.key, skill: skill.name, mode: appliedMode, target });
+    for (const skillsDir of getToolSkillsDirs(tool)) {
+      const target = join(skillsDir, skill.name);
+      const appliedMode = syncedTargets.get(target) || await syncDir(skill.path, target, mode);
+      syncedTargets.set(target, appliedMode);
+      results.push({ tool: tool.key, skill: skill.name, mode: appliedMode, target });
+    }
   }
   return results;
 }
@@ -129,8 +185,8 @@ function assertNoTempManagerSymlinkToRealAgents(syncMode: SyncMode, tools: Retur
   const root = resolve(managerRoot());
   const tmp = resolve(tmpdir());
   if (!root.startsWith(`${tmp}/`)) return;
-  const realAgentSkillDirs = new Set(toolAdapters.map((tool) => resolve(tool.skillsDir)));
-  const selectedRealTools = tools.filter((tool) => realAgentSkillDirs.has(resolve(tool.skillsDir)));
+  const realAgentSkillDirs = new Set(toolAdapters.flatMap(getToolSkillsDirs).map((dir) => resolve(dir)));
+  const selectedRealTools = tools.filter((tool) => getToolSkillsDirs(tool).some((dir) => realAgentSkillDirs.has(resolve(dir))));
   if (selectedRealTools.length === 0) return;
 
   throw new UsageError(
