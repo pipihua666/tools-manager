@@ -264,11 +264,8 @@ export const webAppHtml = String.raw`<!doctype html>
     .toast-region { position: fixed; right: 18px; bottom: 18px; z-index: 20; display: grid; gap: 8px; width: min(360px, calc(100vw - 36px)); }
     .toast { padding: 13px 15px; border: 1px solid #707a74; border-left: 4px solid var(--accent); border-radius: 2px; background: var(--graphite); color: white; box-shadow: var(--shadow); font-size: 11px; animation: toast-in .18s ease-out; }
     .toast.error { border-left-color: #e7655d; }
-    .busy { position: fixed; inset: 0; z-index: 30; display: none; place-items: center; background: rgba(247, 248, 246, .7); backdrop-filter: blur(2px); }
-    .busy.show { display: grid; }
-    .busy-status { min-width: 160px; display: grid; justify-items: center; gap: 13px; padding: 18px 22px; border: 1px solid var(--line-strong); background: var(--panel); box-shadow: 5px 5px 0 rgba(16, 21, 19, .12); }
-    .busy-mark { width: 44px; height: 44px; border: 3px solid #cbd0ca; border-top-color: var(--accent-strong); border-radius: 50%; animation: spin .75s linear infinite; }
-    .busy-label { color: var(--ink); font: 700 10px/1.2 var(--mono); text-transform: uppercase; }
+    .btn.loading { cursor: wait; }
+    .btn.loading::before { content: ""; width: 13px; height: 13px; flex: 0 0 13px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .75s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes pulse { 50% { opacity: .48; transform: scale(.82); } }
     @keyframes view-in { from { opacity: 0; transform: translateY(10px); } }
@@ -355,8 +352,6 @@ export const webAppHtml = String.raw`<!doctype html>
   <dialog id="detail-dialog"><div class="dialog-head"><h2 id="detail-title"></h2><button type="button" class="btn icon ghost" data-close aria-label="Close">&times;</button></div><div class="dialog-body" id="detail-body"></div><div class="dialog-actions"><button type="button" class="btn" data-close>Close</button></div></dialog>
   <dialog id="confirm-dialog"><div class="dialog-head"><h2 id="confirm-title">Confirm action</h2><button type="button" class="btn icon ghost" data-confirm="false" aria-label="Close">&times;</button></div><div class="dialog-body"><p class="confirm-copy" id="confirm-copy"></p></div><div class="dialog-actions"><button type="button" class="btn" data-confirm="false">Cancel</button><button type="button" class="btn danger" data-confirm="true">Confirm</button></div></dialog>
   <div class="toast-region" id="toasts" aria-live="polite"></div>
-  <div class="busy" id="busy" aria-hidden="true"><div class="busy-status" role="status" aria-live="polite"><div class="busy-mark"></div><div class="busy-label" id="busy-label">Loading...</div></div></div>
-
   <script>
     const TOKEN = "__TM_TOKEN__";
     const DEV = __TM_DEV__;
@@ -464,17 +459,27 @@ export const webAppHtml = String.raw`<!doctype html>
       if (!response.ok) throw new Error(payload.error || "Request failed.");
       return payload;
     }
-    async function load(showBusy) {
-      if (showBusy !== false) setBusy(true, "Loading workspace...");
+    async function load(button) {
+      setButtonLoading(button, true, "Loading...");
       try { state.data = await api("/api/snapshot"); render(); }
       catch (error) { toast(error.message, true); }
-      finally { setBusy(false); }
+      finally { setButtonLoading(button, false); }
     }
-    function setBusy(active, message) {
-      if (message) document.getElementById("busy-label").textContent = message;
-      busy.classList.toggle("show", active);
-      busy.setAttribute("aria-hidden", active ? "false" : "true");
-      document.body.setAttribute("aria-busy", active ? "true" : "false");
+    function setButtonLoading(button, active, message) {
+      if (!button) return;
+      if (active) {
+        button.dataset.loadingLabel = button.innerHTML;
+        button.disabled = true;
+        button.classList.add("loading");
+        button.textContent = message || "Working...";
+        button.setAttribute("aria-busy", "true");
+      } else if (button.dataset.loadingLabel !== undefined) {
+        button.innerHTML = button.dataset.loadingLabel;
+        delete button.dataset.loadingLabel;
+        button.disabled = false;
+        button.classList.remove("loading");
+        button.removeAttribute("aria-busy");
+      }
     }
     function formLoadingMessage(command) {
       return ({ "Create": "Creating...", "Import": "Importing...", "Apply": "Applying...", "Sync": "Syncing...", "Move": "Moving...", "Remove": "Removing...", "Save server": "Saving server...", "Save changes": "Saving changes..." })[command] || "Working...";
@@ -818,8 +823,8 @@ export const webAppHtml = String.raw`<!doctype html>
       });
       updateMcpTransport(document.getElementById("dynamic-form"));
     }
-    async function openEditMcp(name) {
-      setBusy(true, "Loading MCP server...");
+    async function openEditMcp(name, button) {
+      setButtonLoading(button, true, "Loading...");
       try {
         const payload = await api("/api/mcp/" + encodeURIComponent(name));
         openForm("Edit MCP server", mcpFormBody(payload.server), "Save changes", async function(form, element) {
@@ -829,7 +834,7 @@ export const webAppHtml = String.raw`<!doctype html>
         });
         updateMcpTransport(document.getElementById("dynamic-form"));
       } catch (error) { toast(error.message, true); }
-      finally { setBusy(false); }
+      finally { setButtonLoading(button, false); }
     }
     function openSyncMcpServer(names) {
       const servers = state.data.mcpServers.filter(function(item) { return names.includes(item.name); });
@@ -858,8 +863,8 @@ export const webAppHtml = String.raw`<!doctype html>
         button.textContent = checked.length ? "Sync selected (" + checked.length + ")" : "Sync selected";
       }
     }
-    async function openEditSkill(name) {
-      setBusy(true, "Loading skill...");
+    async function openEditSkill(name, button) {
+      setButtonLoading(button, true, "Loading...");
       try {
         const payload = await api("/api/skills/" + encodeURIComponent(name));
         const skill = payload.skill;
@@ -871,7 +876,7 @@ export const webAppHtml = String.raw`<!doctype html>
           return "Updated skill " + name + ".";
         });
       } catch (error) { toast(error.message, true); }
-      finally { setBusy(false); }
+      finally { setButtonLoading(button, false); }
     }
     function openAgentSkillDetail(tool, payload) {
       const skill = payload.skill;
@@ -884,13 +889,13 @@ export const webAppHtml = String.raw`<!doctype html>
       document.getElementById("detail-body").innerHTML = body;
       document.getElementById("detail-dialog").showModal();
     }
-    async function openAgentSkill(tool, name) {
-      setBusy(true, "Loading Agent skill...");
+    async function openAgentSkill(tool, name, button) {
+      setButtonLoading(button, true, "Loading...");
       try {
         const payload = await api("/api/agent-skills/" + encodeURIComponent(tool) + "/" + encodeURIComponent(name));
         openAgentSkillDetail(tool, payload);
       } catch (error) { toast(error.message, true); }
-      finally { setBusy(false); }
+      finally { setButtonLoading(button, false); }
     }
     function openAgentMcp(tool, name) {
       const agent = state.data.agents.find(function(item) { return item.tool === tool; });
@@ -916,34 +921,40 @@ export const webAppHtml = String.raw`<!doctype html>
       document.getElementById("confirm-dialog").showModal();
       return new Promise(function(resolve) { state.confirmResolve = resolve; });
     }
-    async function removeSkillAction(name, tool) {
-      setBusy(true, "Inspecting skill links...");
+    async function removeSkillAction(name, tool, button) {
+      setButtonLoading(button, true, "Loading...");
       let detail;
       try { detail = await api("/api/skills/" + encodeURIComponent(name)); }
-      catch (error) { toast(error.message, true); setBusy(false); return; }
-      setBusy(false);
+      catch (error) { toast(error.message, true); setButtonLoading(button, false); return; }
+      setButtonLoading(button, false);
       if (tool && tool !== "all") {
         const link = detail.agentLinks.find(function(item) { return item.tool === tool; });
         if (!link) { toast(toolLabel(tool) + " does not have a managed symlink for " + name + ".", true); return; }
         const copy = "Remove " + name + " from " + toolLabel(tool) + "?\n\nOnly this Agent symlink will be deleted. The managed skill and other Agent links will remain.";
-        if (!await confirmAction("Remove Agent skill", copy)) return;
-        await mutate(function() { return api("/api/skills/" + encodeURIComponent(name) + "?tool=" + encodeURIComponent(tool), { method: "DELETE" }); }, "Removed " + name + " from " + toolLabel(tool) + ".", "Removing Agent skill...");
+        const confirmButton = await confirmAction("Remove Agent skill", copy);
+        if (!confirmButton) return;
+        await mutate(function() { return api("/api/skills/" + encodeURIComponent(name) + "?tool=" + encodeURIComponent(tool), { method: "DELETE" }); }, "Removed " + name + " from " + toolLabel(tool) + ".", "Removing...", confirmButton);
+        document.getElementById("confirm-dialog").close();
         return;
       }
       const links = detail.agentLinks.map(function(link) { return link.tool + ": " + link.path; });
       const copy = "Delete the managed source for " + name + "?" + (links.length ? "\n\nThe following Agent links will also be removed:\n" + links.join("\n") : "");
-      if (!await confirmAction("Remove skill", copy)) return;
-      await mutate(function() { return api("/api/skills/" + encodeURIComponent(name), { method: "DELETE" }); }, "Removed " + name + ".", "Removing skill...");
+      const confirmButton = await confirmAction("Remove skill", copy);
+      if (!confirmButton) return;
+      await mutate(function() { return api("/api/skills/" + encodeURIComponent(name), { method: "DELETE" }); }, "Removed " + name + ".", "Removing...", confirmButton);
+      document.getElementById("confirm-dialog").close();
     }
     async function removeMcpAction(name) {
-      if (!await confirmAction("Remove MCP server", "Delete " + name + " from the managed registry? Agent configuration files will change only after the next sync.")) return;
-      await mutate(function() { return api("/api/mcp/" + encodeURIComponent(name), { method: "DELETE" }); }, "Removed " + name + ".", "Removing MCP server...");
+      const confirmButton = await confirmAction("Remove MCP server", "Delete " + name + " from the managed registry? Agent configuration files will change only after the next sync.");
+      if (!confirmButton) return;
+      await mutate(function() { return api("/api/mcp/" + encodeURIComponent(name), { method: "DELETE" }); }, "Removed " + name + ".", "Removing...", confirmButton);
+      document.getElementById("confirm-dialog").close();
     }
-    async function mutate(action, success, loadingMessage) {
-      setBusy(true, loadingMessage || "Working...");
-      try { await action(); toast(success); await load(false); }
+    async function mutate(action, success, loadingMessage, button) {
+      setButtonLoading(button, true, loadingMessage || "Working...");
+      try { await action(); toast(success); await load(); }
       catch (error) { toast(error.message, true); }
-      finally { setBusy(false); }
+      finally { setButtonLoading(button, false); }
     }
 
     document.addEventListener("keydown", function(event) {
@@ -1005,12 +1016,13 @@ export const webAppHtml = String.raw`<!doctype html>
       if (target.dataset.view) { state.view = target.dataset.view; location.hash = state.view; render(); return; }
       if (target.dataset.close !== undefined) { target.closest("dialog").close(); return; }
       if (target.dataset.confirm !== undefined) {
-        document.getElementById("confirm-dialog").close();
-        if (state.confirmResolve) state.confirmResolve(target.dataset.confirm === "true");
+        const confirmed = target.dataset.confirm === "true";
+        if (!confirmed) document.getElementById("confirm-dialog").close();
+        if (state.confirmResolve) state.confirmResolve(confirmed ? target : null);
         state.confirmResolve = null; return;
       }
       const action = target.dataset.action;
-      if (action === "refresh") await load();
+      if (action === "refresh") await load(target);
       if (action === "add-skill") openAddSkill();
       if (action === "create-preset") openCreatePreset();
       if (action === "import-agent-skills") openImport("skills");
@@ -1020,17 +1032,17 @@ export const webAppHtml = String.raw`<!doctype html>
       if (action === "apply-preset") openSyncSkills(target.dataset.preset, true);
       if (action === "move-skill") openMoveSkill(target.dataset.preset);
       if (action === "remove-preset-skill") openRemovePresetSkill(target.dataset.preset);
-      if (action === "edit-skill") await openEditSkill(target.dataset.name);
-      if (action === "view-agent-skill") await openAgentSkill(target.dataset.tool, target.dataset.name);
-      if (action === "delete-skill") await removeSkillAction(target.dataset.name, target.dataset.tool);
+      if (action === "edit-skill") await openEditSkill(target.dataset.name, target);
+      if (action === "view-agent-skill") await openAgentSkill(target.dataset.tool, target.dataset.name, target);
+      if (action === "delete-skill") await removeSkillAction(target.dataset.name, target.dataset.tool, target);
       if (action === "add-mcp") openAddMcp();
-      if (action === "edit-mcp") await openEditMcp(target.dataset.name);
+      if (action === "edit-mcp") await openEditMcp(target.dataset.name, target);
       if (action === "view-agent-mcp") openAgentMcp(target.dataset.tool, target.dataset.name);
       if (action === "import-agent-mcp") openImport("mcp");
       if (action === "sync-one-mcp") openSyncMcpServer([target.dataset.name]);
       if (action === "sync-selected-mcp") openSyncMcpServer(selectedResourceNames("mcp"));
       if (action === "delete-mcp") await removeMcpAction(target.dataset.name);
-      if (action === "backup") await mutate(function() { return api("/api/backup", { method: "POST", body: "{}" }); }, "Skills backup completed.", "Backing up managed skills...");
+      if (action === "backup") await mutate(function() { return api("/api/backup", { method: "POST", body: "{}" }); }, "Skills backup completed.", "Backing up...", target);
     });
     document.addEventListener("change", function(event) {
       const input = event.target;
@@ -1075,14 +1087,15 @@ export const webAppHtml = String.raw`<!doctype html>
       event.preventDefault();
       if (!state.formHandler) return;
       const form = event.currentTarget;
-      setBusy(true, formLoadingMessage(document.getElementById("form-submit").textContent));
+      const submitButton = document.getElementById("form-submit");
+      setButtonLoading(submitButton, true, formLoadingMessage(submitButton.textContent));
       try {
         const message = await state.formHandler(new FormData(form), form);
         document.getElementById("form-dialog").close();
         toast(message);
-        await load(false);
+        await load();
       } catch (error) { toast(error.message, true); }
-      finally { setBusy(false); }
+      finally { setButtonLoading(submitButton, false); }
     });
     document.getElementById("confirm-dialog").addEventListener("cancel", function() {
       if (state.confirmResolve) state.confirmResolve(false);

@@ -96,9 +96,10 @@ test("serves the web dashboard and protects mutations", async () => {
   expect(html).not.toContain("Open agents");
   expect(html).toContain("<th>Skill paths</th><th>MCP config</th>");
   expect(html).toContain('class="agent-table"');
-  expect(html).toContain('class="busy-status" role="status"');
+  expect(html).not.toContain('class="busy-status" role="status"');
+  expect(html).toContain('.btn.loading::before');
   expect(html).toContain('"Import": "Importing..."');
-  expect(html).toContain('document.body.setAttribute("aria-busy"');
+  expect(html).toContain('button.setAttribute("aria-busy", "true")');
   expect(html).toContain('data-resource-search=');
   expect(html).toContain('selectField("Preset", "preset", presetOptions("Default"))');
   expect(html).toContain('data-action="create-preset"');
