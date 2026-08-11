@@ -16,12 +16,6 @@ export type SkillRow = {
   updated_at: string;
 };
 
-export type PresetRow = {
-  id: number;
-  name: string;
-  created_at: string;
-};
-
 export type McpServerRow = {
   id: number;
   name: string;
@@ -46,7 +40,6 @@ export async function openDb(): Promise<Database> {
   database = new Database(p.dbPath);
   database.exec("PRAGMA journal_mode = WAL");
   migrate(database);
-  ensureDefaultPreset(database);
   return database;
 }
 
@@ -69,20 +62,6 @@ function migrate(db: Database): void {
       source_commit TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS presets (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS preset_skills (
-      preset_id INTEGER NOT NULL,
-      skill_id INTEGER NOT NULL,
-      PRIMARY KEY (preset_id, skill_id),
-      FOREIGN KEY (preset_id) REFERENCES presets(id) ON DELETE CASCADE,
-      FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS mcp_servers (
@@ -108,8 +87,4 @@ function migrate(db: Database): void {
 function addColumnIfMissing(db: Database, table: string, column: string, definition: string): void {
   const columns = db.query(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
   if (!columns.some((item) => item.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
-}
-
-function ensureDefaultPreset(db: Database): void {
-  db.query("INSERT OR IGNORE INTO presets (name) VALUES (?)").run("Default");
 }

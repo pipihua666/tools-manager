@@ -14,6 +14,7 @@ export type McpServer = {
   headers: Record<string, string>;
   targetTools: string[];
   enabled: boolean;
+  scope?: "user" | "system";
 };
 
 export async function addMcpServer(input: McpServer): Promise<void> {
@@ -108,7 +109,7 @@ export async function listToolMcpServers(toolInput = "all", adapters?: ToolAdapt
   const results: Array<{ tool: string; path: string; servers: McpServer[] }> = [];
   for (const tool of tools) {
     const text = await readTextIfExists(tool.mcpPath);
-    const servers = parseToolMcp(tool, text).sort((a, b) => a.name.localeCompare(b.name));
+    const servers = parseToolMcp(tool, text).map((server) => ({ ...server, scope: classifyMcpScope(tool, server) })).sort((a, b) => a.name.localeCompare(b.name));
     results.push({ tool: tool.key, path: tool.mcpPath, servers });
   }
   return results;
@@ -139,6 +140,42 @@ export async function syncMcpServer(name: string, toolInput?: string, adapters?:
     results.push({ tool: tool.key, path: tool.mcpPath, count: 1, backup });
   }
   return results;
+}
+
+export async function removeMcpServerFromTool(name: string, toolInput: string, adapters?: ToolAdapter[]): Promise<{ tool: string; path: string; backup: string | null }> {
+  const tools = adapters ? resolveSelectedTools(toolInput, adapters) : resolveTools(toolInput);
+  if (toolInput === "all" || tools.length !== 1) throw new Error("Select one Agent to remove an MCP server.");
+  const tool = tools[0]!;
+  const existing = await readTextIfExists(tool.mcpPath);
+  if (existing === null) return { tool: tool.key, path: tool.mcpPath, backup: null };
+  const server = parseToolMcp(tool, existing).find((item) => item.name === name);
+  if (server && classifyMcpScope(tool, server) === "system") throw new Error(`System MCP server cannot be removed: ${name}`);
+
+  const backup = await backupFile(tool.mcpPath);
+  if (tool.mcpKind === "codex-toml") {
+    await writeText(tool.mcpPath, removeMcpFromCodexToml(existing, name));
+  } else if (tool.mcpKind === "opencode-json") {
+    await writeText(tool.mcpPath, removeMcpFromOpenCodeJson(existing, name));
+  } else {
+    await writeText(tool.mcpPath, removeMcpFromJson(existing, name));
+  }
+  return { tool: tool.key, path: tool.mcpPath, backup };
+}
+
+export async function isSystemMcpServer(name: string, adapters?: ToolAdapter[]): Promise<boolean> {
+  const tools = adapters || resolveTools("all");
+  for (const tool of tools) {
+    const text = await readTextIfExists(tool.mcpPath);
+    const server = parseToolMcp(tool, text).find((item) => item.name === name);
+    if (server && classifyMcpScope(tool, server) === "system") return true;
+  }
+  return false;
+}
+
+export function classifyMcpScope(tool: ToolAdapter, server: McpServer): "user" | "system" {
+  if (tool.key !== "codex" || server.transport !== "stdio") return "user";
+  const command = [server.command, ...server.args].join(" ");
+  return /(?:ChatGPT\.app|Codex Computer Use\.app|SkyComputerUseClient\.app|\/cua_node\/)/.test(command) ? "system" : "user";
 }
 
 function resolveSelectedTools(toolInput: string | undefined, adapters: ToolAdapter[]): ToolAdapter[] {
@@ -202,6 +239,16 @@ export function renderMcpJson(existing: string | null, servers: McpServer[], kin
   return `${JSON.stringify(root, null, 2)}\n`;
 }
 
+export function removeMcpFromJson(existing: string, name: string): string {
+  const parsed = JSON.parse(existing) as unknown;
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid MCP JSON configuration.");
+  const root = parsed as Record<string, unknown>;
+  const mcpServers = normalizeObject(root.mcpServers);
+  delete mcpServers[name];
+  root.mcpServers = mcpServers;
+  return `${JSON.stringify(root, null, 2)}\n`;
+}
+
 export function parseMcpJson(text: string, tool: string): McpServer[] {
   try {
     const parsed = JSON.parse(text) as unknown;
@@ -243,6 +290,16 @@ export function renderOpenCodeJson(existing: string | null, servers: McpServer[]
   for (const server of servers) {
     mcp[server.name] = serverToOpenCodeJson(server);
   }
+  root.mcp = mcp;
+  return `${JSON.stringify(root, null, 2)}\n`;
+}
+
+export function removeMcpFromOpenCodeJson(existing: string, name: string): string {
+  const parsed = JSON.parse(existing) as unknown;
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid OpenCode MCP configuration.");
+  const root = parsed as Record<string, unknown>;
+  const mcp = normalizeObject(root.mcp);
+  delete mcp[name];
   root.mcp = mcp;
   return `${JSON.stringify(root, null, 2)}\n`;
 }
@@ -313,6 +370,10 @@ export function renderCodexToml(existing: string | null, servers: McpServer[]): 
     return lines.join("\n");
   });
   return [retained, ...blocks].filter(Boolean).join("\n\n") + "\n";
+}
+
+export function removeMcpFromCodexToml(existing: string, name: string): string {
+  return `${stripManagedCodexServers(existing, [name]).trimEnd()}\n`;
 }
 
 export function parseCodexToml(text: string, tool: string): McpServer[] {

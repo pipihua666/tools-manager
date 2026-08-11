@@ -24,34 +24,29 @@ afterEach(async () => {
   roots = [];
 });
 
-test("creates a preset through the CLI", async () => {
+test("adds and lists managed skills through the CLI", async () => {
   const managerHome = await mkdtemp(join(tmpdir(), "tm-cli-home-"));
-  roots.push(managerHome);
-  const { exitCode, stdout, stderr } = await runCli(managerHome, "presets", "create", "CLI Work", "--json");
-
-  expect(stderr).toBe("");
-  expect(exitCode).toBe(0);
-  expect(JSON.parse(stdout)).toMatchObject({ name: "CLI Work", skill_count: 0 });
-});
-
-test("moves and removes multiple preset skills through the CLI", async () => {
-  const managerHome = await mkdtemp(join(tmpdir(), "tm-cli-home-"));
-  const skillSource = await mkdtemp(join(tmpdir(), "tm-cli-skills-"));
+  const skillSource = await mkdtemp(join(tmpdir(), "tm-cli-skill-"));
   roots.push(managerHome, skillSource);
-  await mkdir(join(skillSource, "a"), { recursive: true });
-  await mkdir(join(skillSource, "b"), { recursive: true });
-  await writeFile(join(skillSource, "a", "SKILL.md"), "---\nname: CLI Batch A\ndescription: First\n---\n");
-  await writeFile(join(skillSource, "b", "SKILL.md"), "---\nname: CLI Batch B\ndescription: Second\n---\n");
+  await mkdir(skillSource, { recursive: true });
+  await writeFile(join(skillSource, "SKILL.md"), "---\nname: CLI Managed\ndescription: Demo\n---\n");
 
   expect((await runCli(managerHome, "init")).exitCode).toBe(0);
-  expect((await runCli(managerHome, "skills", "add", skillSource, "--json")).exitCode).toBe(0);
-  const moved = await runCli(managerHome, "presets", "move-skills", "Default", "Work", "cli-batch-a", "cli-batch-b", "--json");
-  const removed = await runCli(managerHome, "presets", "remove-skills", "Work", "cli-batch-a", "cli-batch-b", "--json");
+  const added = await runCli(managerHome, "skills", "add", skillSource, "--json");
+  const listed = await runCli(managerHome, "skills", "list", "--json");
 
-  expect(moved.stderr).toBe("");
-  expect(moved.exitCode).toBe(0);
-  expect(JSON.parse(moved.stdout)).toEqual({ skills: ["cli-batch-a", "cli-batch-b"], from: "Default", to: "Work", count: 2 });
-  expect(removed.stderr).toBe("");
-  expect(removed.exitCode).toBe(0);
-  expect(JSON.parse(removed.stdout)).toEqual({ skills: ["cli-batch-a", "cli-batch-b"], preset: "Work", count: 2 });
+  expect(added.stderr).toBe("");
+  expect(added.exitCode).toBe(0);
+  expect(JSON.parse(added.stdout)[0]).toMatchObject({ name: "cli-managed" });
+  expect(listed.exitCode).toBe(0);
+  expect(JSON.parse(listed.stdout).map((skill: { name: string }) => skill.name)).toContain("cli-managed");
+});
+
+test("rejects the removed presets command", async () => {
+  const managerHome = await mkdtemp(join(tmpdir(), "tm-cli-home-"));
+  roots.push(managerHome);
+  const result = await runCli(managerHome, "presets", "list");
+
+  expect(result.exitCode).toBe(2);
+  expect(result.stderr).toContain("Unknown command: presets");
 });

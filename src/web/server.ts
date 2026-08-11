@@ -6,6 +6,7 @@ import {
   addLocalAgentSkills,
   addSkills,
   findSkillAgentLinks,
+  findSkillPrimaryAgentLinks,
   listAgentSkills,
   getSkill,
   listSkills,
@@ -13,15 +14,18 @@ import {
   readAgentSkillMarkdown,
   removeSkill,
   removeSkillAgentLink,
+  syncSkill,
+  type SyncMode,
   updateSkillMarkdown,
 } from "../core/skill";
-import { applyPreset, createPreset, getPresetSkills, listPresets, moveSkillsPreset, removeSkillsFromPreset, syncSkill, type SyncMode } from "../core/preset";
 import {
   addMcpServer,
   getMcpServer,
   importMcpFromTools,
+  isSystemMcpServer,
   listMcpServers,
   removeMcpServer,
+  removeMcpServerFromTool,
   syncMcp,
   syncMcpServer,
   updateMcpServer,
@@ -140,11 +144,11 @@ async function handleRequest(request: Request, token: string, hostname: string, 
     }
     if (request.method === "POST" && url.pathname === "/api/skills/import") {
       const body = await readBody(request);
-      return json({ skills: await addSkills(requiredString(body, "source"), optionalPreset(body.preset)) }, 201);
+      return json({ skills: await addSkills(requiredString(body, "source")) }, 201);
     }
     if (request.method === "POST" && url.pathname === "/api/skills/import-agent") {
       const body = await readBody(request);
-      return json({ results: await addLocalAgentSkills(optionalTool(body.tool), toolAdapters, optionalPreset(body.preset)) }, 201);
+      return json({ results: await addLocalAgentSkills(optionalTool(body.tool), toolAdapters) }, 201);
     }
     if (request.method === "POST" && url.pathname === "/api/skills/sync-selected") {
       const body = await readBody(request);
@@ -163,23 +167,6 @@ async function handleRequest(request: Request, token: string, hostname: string, 
       if (tool !== "all") return json(await removeSkillAgentLink(name, tool));
       return json(await removeSkill(name, { removeAgentLinks: true }));
     }
-    if (request.method === "POST" && url.pathname === "/api/presets") {
-      const body = await readBody(request);
-      return json({ preset: await createPreset(requiredString(body, "name")) }, 201);
-    }
-    if (request.method === "POST" && url.pathname === "/api/presets/apply") {
-      const body = await readBody(request);
-      const mode = optionalSyncMode(body.mode);
-      return json({ results: await applyPreset(requiredString(body, "preset"), optionalTool(body.tool), mode) });
-    }
-    if (request.method === "POST" && url.pathname === "/api/presets/move-skill") {
-      const body = await readBody(request);
-      return json(await moveSkillsPreset(requiredSkillNames(body), requiredString(body, "from"), requiredString(body, "to")));
-    }
-    if (request.method === "POST" && url.pathname === "/api/presets/remove-skill") {
-      const body = await readBody(request);
-      return json(await removeSkillsFromPreset(requiredSkillNames(body), requiredString(body, "preset")));
-    }
     if (request.method === "POST" && url.pathname === "/api/mcp") {
       const server = parseMcpServer(await readBody(request));
       await addMcpServer(server);
@@ -196,7 +183,11 @@ async function handleRequest(request: Request, token: string, hostname: string, 
       return json({ server: await updateMcpServer(name, server) });
     }
     if (request.method === "DELETE" && url.pathname.startsWith("/api/mcp/")) {
-      return json({ server: await removeMcpServer(pathTail(url.pathname, "/api/mcp/")) });
+      const name = pathTail(url.pathname, "/api/mcp/");
+      const tool = optionalTool(url.searchParams.get("tool"));
+      if (tool && tool !== "all") return json(await removeMcpServerFromTool(name, tool));
+      if (await isSystemMcpServer(name)) throw new Error(`System MCP server cannot be removed: ${name}`);
+      return json({ server: await removeMcpServer(name) });
     }
     if (request.method === "POST" && url.pathname === "/api/mcp/import") {
       const body = await readBody(request);
@@ -235,27 +226,21 @@ function devEvents(bootId: string): Response {
 }
 
 async function snapshot() {
-  const [managerStatus, skills, presets, mcpServers, agents] = await Promise.all([
+  const [managerStatus, skills, mcpServers, agents] = await Promise.all([
     status(),
     listSkills(),
-    listPresets(),
     listMcpServers(),
     listAgentOverview("all"),
   ]);
-  const presetDetails = await Promise.all(presets.map(async (preset) => ({
-    ...preset,
-    skills: (await getPresetSkills(preset.name)).map((skill) => skill.name),
-  })));
   const skillDetails = await Promise.all(skills.map(async (skill) => ({
     ...skill,
     scope: "user" as const,
     editable: true,
-    agentLinks: await findSkillAgentLinks(skill),
+    agentLinks: await findSkillPrimaryAgentLinks(skill),
   })));
   return {
     status: managerStatus,
     skills: skillDetails,
-    presets: presetDetails,
     mcpServers: mcpServers.map(({ env, headers, ...server }) => ({
       ...server,
       envKeys: Object.keys(env),
@@ -301,23 +286,12 @@ function optionalTool(value: unknown): string {
   return value;
 }
 
-function optionalPreset(value: unknown): string {
-  if (value === undefined || value === null || value === "") return "Default";
-  if (typeof value !== "string" || !value.trim()) throw new Error("Preset must be a non-empty string.");
-  return value.trim();
-}
-
 function requiredNames(body: JsonRecord): string[] {
   const value = body.names;
   if (!Array.isArray(value) || value.length === 0 || !value.every((name) => typeof name === "string" && name.trim())) {
     throw new Error("Select at least one resource.");
   }
   return [...new Set(value.map((name) => name.trim()))];
-}
-
-function requiredSkillNames(body: JsonRecord): string[] {
-  if (Array.isArray(body.names)) return requiredNames(body);
-  return [requiredString(body, "skill")];
 }
 
 function optionalSyncMode(value: unknown): SyncMode | undefined {

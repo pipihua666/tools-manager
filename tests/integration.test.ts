@@ -4,8 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { runGit } from "../src/core/git";
 import { initManager } from "../src/core/init";
-import { addAllLocalAgentSkills, addCodexSkills, addLocalAgentSkills, addSkill, addSkills, getSkill, listAgentSkills, listSkills, removeSkill, removeSkillAgentLink } from "../src/core/skill";
-import { applyPreset, createPreset, getPresetSkills, listPresets, movePreset, moveSkillPreset, moveSkillsPreset, removeSkillFromPreset, removeSkillsFromPreset, syncSkill } from "../src/core/preset";
+import { addAllLocalAgentSkills, addCodexSkills, addLocalAgentSkills, addSkill, addSkills, getSkill, listAgentSkills, listSkills, removeSkill, removeSkillAgentLink, syncSkill } from "../src/core/skill";
 import { closeDb } from "../src/core/db";
 import { pathExists } from "../src/core/fs";
 import { getTool, getToolSkillsDirs, type ToolAdapter } from "../src/core/tools";
@@ -26,7 +25,7 @@ async function tempRoot(prefix: string): Promise<string> {
   return dir;
 }
 
-test("init, add local skill, and default preset membership", async () => {
+test("initializes and adds a local skill to the managed registry", async () => {
   const managerHome = await tempRoot("tm-home-");
   process.env.TOOLS_MANAGER_HOME = managerHome;
   const skillDir = await tempRoot("tm-local-skill-");
@@ -34,33 +33,7 @@ test("init, add local skill, and default preset membership", async () => {
   await initManager();
   const skill = await addSkill(skillDir);
   expect(skill.name).toBe("local-skill");
-  const defaultSkills = (await getPresetSkills("Default")).map((item) => item.name).sort();
-  expect(defaultSkills).toContain("local-skill");
-  expect(defaultSkills).toContain("tools-manager");
-});
-
-test("imports a skill into the selected preset", async () => {
-  const managerHome = await tempRoot("tm-home-");
-  process.env.TOOLS_MANAGER_HOME = managerHome;
-  const skillDir = await tempRoot("tm-local-skill-");
-  await writeFile(join(skillDir, "SKILL.md"), "---\nname: Work Skill\ndescription: Preset target\n---\n");
-  await initManager();
-
-  await addSkills(skillDir, "Work");
-
-  expect((await getPresetSkills("Work")).map((skill) => skill.name)).toEqual(["work-skill"]);
-  expect((await getPresetSkills("Default")).map((skill) => skill.name)).not.toContain("work-skill");
-});
-
-test("creates an empty preset with a unique name", async () => {
-  const managerHome = await tempRoot("tm-home-");
-  process.env.TOOLS_MANAGER_HOME = managerHome;
-  await initManager();
-
-  expect(await createPreset("  Work  ")).toMatchObject({ name: "Work", skill_count: 0 });
-  expect((await listPresets()).find((preset) => preset.name === "Work")).toMatchObject({ skill_count: 0 });
-  await expect(createPreset("work")).rejects.toThrow("Preset already exists: Work");
-  await expect(createPreset("   ")).rejects.toThrow("Preset name cannot be empty");
+  expect((await listSkills()).map((item) => item.name)).toEqual(expect.arrayContaining(["local-skill", "tools-manager"]));
 });
 
 test("adds multiple skills from one source and updates existing skills", async () => {
@@ -80,8 +53,7 @@ test("adds multiple skills from one source and updates existing skills", async (
   expect(imported.map((skill) => skill.name).sort()).toEqual(["multi-a", "multi-b"]);
   expect(updated.map((skill) => skill.name).sort()).toEqual(["multi-a", "multi-b"]);
   expect((await getSkill("multi-a"))?.description).toBe("Updated");
-  const defaultSkills = (await getPresetSkills("Default")).map((skill) => skill.name);
-  expect(defaultSkills).toEqual(expect.arrayContaining(["multi-a", "multi-b", "tools-manager"]));
+  expect((await listSkills()).map((skill) => skill.name)).toEqual(expect.arrayContaining(["multi-a", "multi-b", "tools-manager"]));
 });
 
 test("refreshes a stored skill description from multiline frontmatter", async () => {
@@ -117,90 +89,9 @@ test("adds multiple skills from a remote repository skills directory", async () 
 
   expect(imported.map((skill) => skill.name).sort()).toEqual(["remote-skill-a", "remote-skill-b", "remote-skill-c"]);
   expect(importedFromRoot.map((skill) => skill.name).sort()).toEqual(["remote-skill-a", "remote-skill-b", "remote-skill-c"]);
-  expect((await getPresetSkills("Default")).map((skill) => skill.name)).toEqual(
+  expect((await listSkills()).map((skill) => skill.name)).toEqual(
     expect.arrayContaining(["remote-skill-a", "remote-skill-b", "remote-skill-c", "tools-manager"]),
   );
-});
-
-test("moves skills from one preset to another", async () => {
-  const managerHome = await tempRoot("tm-home-");
-  process.env.TOOLS_MANAGER_HOME = managerHome;
-  const skillDir = await tempRoot("tm-local-skill-");
-  await writeFile(join(skillDir, "SKILL.md"), "---\nname: Preset Skill\ndescription: Demo\n---\n");
-  await initManager();
-  await addSkill(skillDir);
-
-  const result = await movePreset("Default", "Work");
-
-  expect(result).toEqual({ from: "Default", to: "Work", skillCount: 2 });
-  const presets = await listPresets();
-  expect(presets.find((preset) => preset.name === "Default")?.skill_count).toBe(0);
-  expect(presets.find((preset) => preset.name === "Work")?.skill_count).toBe(2);
-});
-
-test("moves one skill from one preset to another", async () => {
-  const managerHome = await tempRoot("tm-home-");
-  process.env.TOOLS_MANAGER_HOME = managerHome;
-  const root = await tempRoot("tm-multi-skill-");
-  await mkdir(join(root, "a"), { recursive: true });
-  await mkdir(join(root, "b"), { recursive: true });
-  await writeFile(join(root, "a", "SKILL.md"), "---\nname: Move A\ndescription: First\n---\n");
-  await writeFile(join(root, "b", "SKILL.md"), "---\nname: Move B\ndescription: Second\n---\n");
-  await initManager();
-  await addSkills(root);
-
-  const result = await moveSkillPreset("move-a", "Default", "Work");
-
-  expect(result).toEqual({ skill: "move-a", from: "Default", to: "Work" });
-  expect((await getPresetSkills("Default")).map((skill) => skill.name)).toEqual(["move-b", "tools-manager"]);
-  expect((await getPresetSkills("Work")).map((skill) => skill.name)).toEqual(["move-a"]);
-});
-
-test("removes a skill from a preset without deleting the managed skill", async () => {
-  const managerHome = await tempRoot("tm-home-");
-  process.env.TOOLS_MANAGER_HOME = managerHome;
-  const skillDir = await tempRoot("tm-local-skill-");
-  await writeFile(join(skillDir, "SKILL.md"), "---\nname: Preset Remove Only\ndescription: Demo\n---\n");
-  await initManager();
-  const skill = await addSkill(skillDir);
-
-  const result = await removeSkillFromPreset("preset-remove-only", "Default");
-
-  expect(result).toEqual({ skill: "preset-remove-only", preset: "Default" });
-  expect((await getPresetSkills("Default")).map((item) => item.name)).not.toContain("preset-remove-only");
-  expect(await getSkill("preset-remove-only")).not.toBeNull();
-  expect(await pathExists(skill.path)).toBe(true);
-});
-
-test("moves and removes multiple preset skills atomically", async () => {
-  const managerHome = await tempRoot("tm-home-");
-  process.env.TOOLS_MANAGER_HOME = managerHome;
-  const root = await tempRoot("tm-batch-preset-skills-");
-  await mkdir(join(root, "a"), { recursive: true });
-  await mkdir(join(root, "b"), { recursive: true });
-  await writeFile(join(root, "a", "SKILL.md"), "---\nname: Batch A\ndescription: First\n---\n");
-  await writeFile(join(root, "b", "SKILL.md"), "---\nname: Batch B\ndescription: Second\n---\n");
-  await initManager();
-  await addSkills(root);
-
-  await expect(moveSkillsPreset(["batch-a", "missing"], "Default", "Work")).rejects.toThrow("Skill not found: missing");
-  expect((await getPresetSkills("Default")).map((skill) => skill.name)).toEqual(expect.arrayContaining(["batch-a", "batch-b"]));
-  expect((await listPresets()).some((preset) => preset.name === "Work")).toBe(false);
-
-  const moved = await moveSkillsPreset(["batch-a", "batch-b", "batch-a"], "Default", "Work");
-  expect(moved).toEqual({ skills: ["batch-a", "batch-b"], from: "Default", to: "Work", count: 2 });
-  expect((await getPresetSkills("Default")).map((skill) => skill.name)).not.toEqual(expect.arrayContaining(["batch-a", "batch-b"]));
-  expect((await getPresetSkills("Work")).map((skill) => skill.name)).toEqual(["batch-a", "batch-b"]);
-  await expect(moveSkillsPreset(["batch-a"], "Work", "Work")).rejects.toThrow("Source and destination presets must be different");
-
-  await expect(removeSkillsFromPreset(["batch-a", "tools-manager"], "Work")).rejects.toThrow("Skill tools-manager is not in preset Work");
-  expect((await getPresetSkills("Work")).map((skill) => skill.name)).toEqual(["batch-a", "batch-b"]);
-
-  const removed = await removeSkillsFromPreset(["batch-a", "batch-b"], "Work");
-  expect(removed).toEqual({ skills: ["batch-a", "batch-b"], preset: "Work", count: 2 });
-  expect(await getPresetSkills("Work")).toEqual([]);
-  expect(await getSkill("batch-a")).not.toBeNull();
-  expect(await getSkill("batch-b")).not.toBeNull();
 });
 
 test("refuses to sync temporary manager skills into real agent directories", async () => {
@@ -211,10 +102,10 @@ test("refuses to sync temporary manager skills into real agent directories", asy
   await initManager();
   await addSkill(skillDir);
 
-  await expect(applyPreset("Default", "codex")).rejects.toThrow("Refusing to symlink skills from temporary Tools Manager home");
+  await expect(syncSkill("temp-sync-guard", "codex")).rejects.toThrow("Refusing to symlink skills from temporary Tools Manager home");
 });
 
-test("applies preset with explicit copy sync mode", async () => {
+test("syncs a skill with explicit copy mode", async () => {
   const managerHome = await tempRoot("tm-home-");
   process.env.TOOLS_MANAGER_HOME = managerHome;
   const skillDir = await tempRoot("tm-local-skill-");
@@ -223,7 +114,7 @@ test("applies preset with explicit copy sync mode", async () => {
   await initManager();
   await addSkill(skillDir);
 
-  const result = await applyPreset("Default", undefined, "copy", [fakeTool("codex", "Codex", agentRoot)]);
+  const result = await syncSkill("copy-sync", undefined, "copy", [fakeTool("codex", "Codex", agentRoot)]);
   const target = join(agentRoot, "copy-sync");
 
   expect(result).toContainEqual({ tool: "codex", skill: "copy-sync", mode: "copy", target });
@@ -231,7 +122,7 @@ test("applies preset with explicit copy sync mode", async () => {
   expect(await pathExists(join(target, "SKILL.md"))).toBe(true);
 });
 
-test("syncs one managed skill without applying its whole preset", async () => {
+test("syncs one managed skill without syncing other skills", async () => {
   const managerHome = await tempRoot("tm-home-");
   process.env.TOOLS_MANAGER_HOME = managerHome;
   const firstDir = await tempRoot("tm-local-skill-");
@@ -250,7 +141,7 @@ test("syncs one managed skill without applying its whole preset", async () => {
   expect(await pathExists(join(agentRoot, "leave-this"))).toBe(false);
 });
 
-test("removes skill record, files, and preset membership", async () => {
+test("removes skill record and files", async () => {
   const managerHome = await tempRoot("tm-home-");
   process.env.TOOLS_MANAGER_HOME = managerHome;
   const skillDir = await tempRoot("tm-local-skill-");
@@ -263,7 +154,6 @@ test("removes skill record, files, and preset membership", async () => {
   expect(removed.skill.name).toBe("remove-me");
   expect(await getSkill("remove-me")).toBeNull();
   expect(await pathExists(skill.path)).toBe(false);
-  expect((await getPresetSkills("Default")).map((item) => item.name)).toEqual(["tools-manager"]);
 });
 
 test("removes agent symlinks that point to managed skill", async () => {
@@ -326,8 +216,7 @@ test("adds direct Codex skills into manager", async () => {
   expect(skills.some((skill) => skill.name === "codex-import")).toBe(true);
   expect(skills.some((skill) => skill.name === "tm-test-not-a-skill")).toBe(false);
   expect((await lstat(codexSkill)).isSymbolicLink()).toBe(true);
-  const presets = await listPresets();
-  expect(presets.find((preset) => preset.name === "Default")?.skill_count).toBeGreaterThanOrEqual(1);
+  expect((await listSkills()).some((skill) => skill.name === "codex-import")).toBe(true);
 });
 
 test("adds skills from all local agent directories", async () => {
@@ -356,8 +245,7 @@ test("adds skills from all local agent directories", async () => {
   expect((await lstat(join(claudeRoot, "claude-skill"))).isSymbolicLink()).toBe(true);
   const secondResult = await addAllLocalAgentSkills(tools);
   expect(secondResult.find((tool) => tool.tool === "codex")?.skills.map((skill) => skill.name)).toEqual(["codex-managed"]);
-  const defaultSkills = (await getPresetSkills("Default")).map((skill) => skill.name);
-  expect(defaultSkills).toEqual(expect.arrayContaining(["codex-managed", "claude-managed", "tools-manager"]));
+  expect((await listSkills()).map((skill) => skill.name)).toEqual(expect.arrayContaining(["codex-managed", "claude-managed", "tools-manager"]));
 });
 
 test("adds skills from a selected local agent", async () => {
@@ -377,7 +265,7 @@ test("adds skills from a selected local agent", async () => {
   expect((await lstat(join(codexRoot, "codex-skill"))).isSymbolicLink()).toBe(true);
 });
 
-test("supports Codex skills in both tool-specific and shared agent directories", async () => {
+test("supports shared Agent skill imports without cross-syncing a selected Agent", async () => {
   const managerHome = await tempRoot("tm-home-");
   process.env.TOOLS_MANAGER_HOME = managerHome;
   const codexRoot = await tempRoot("tm-codex-skills-");
@@ -398,10 +286,8 @@ test("supports Codex skills in both tool-specific and shared agent directories",
 
   await addSkill(sourceDir);
   const synced = await syncSkill("synced-codex", "codex", "symlink", [tool]);
-  expect(synced.map((item) => item.target)).toEqual([
-    join(codexRoot, "synced-codex"),
-    join(sharedRoot, "synced-codex"),
-  ]);
+  expect(synced.map((item) => item.target)).toEqual([join(codexRoot, "synced-codex")]);
+  expect(await pathExists(join(sharedRoot, "synced-codex"))).toBe(false);
 
   const listed = await listAgentSkills("codex", [tool]);
   expect(listed[0]?.skills.map((skill) => skill.name)).toEqual(["shared-codex", "synced-codex"]);

@@ -53,16 +53,6 @@ test("serves the web dashboard and protects mutations", async () => {
   const crossSite = await handler(new Request("http://127.0.0.1:4343/api/snapshot", {
     headers: { "sec-fetch-site": "cross-site" },
   }));
-  const createdPreset = await handler(new Request("http://127.0.0.1:4343/api/presets", {
-    method: "POST",
-    headers: mutationHeaders,
-    body: JSON.stringify({ name: "Work" }),
-  }));
-  const duplicatePreset = await handler(new Request("http://127.0.0.1:4343/api/presets", {
-    method: "POST",
-    headers: mutationHeaders,
-    body: JSON.stringify({ name: "work" }),
-  }));
   const snapshot = await handler(new Request("http://127.0.0.1:4343/api/snapshot"));
   const snapshotText = await snapshot.text();
   const mcpDetail = await handler(new Request("http://127.0.0.1:4343/api/mcp/private-server"));
@@ -98,42 +88,130 @@ test("serves the web dashboard and protects mutations", async () => {
   expect(html).toContain('class="agent-table"');
   expect(html).not.toContain('class="busy-status" role="status"');
   expect(html).toContain('.btn.loading::before');
+  expect(html).toContain('grid-template-rows: auto minmax(0, 1fr) auto;');
+  expect(html).toContain('max-width: none;');
+  expect(html).toContain('max-height: calc(100dvh - 16px);');
+  expect(html).toContain('max-height: calc(100dvh - 20px);');
+  expect(html).toContain('[data-mcp-transport], [data-mcp-add-mode], [data-skill-add-mode] { display: grid; gap: 18px; }');
+  expect(html).toContain('.dialog-body { min-height: 0;');
+  expect(html).not.toContain('#form-dialog:has(.select-shell) { overflow: visible; }');
+  expect(html).toContain('position: fixed; z-index: 80;');
+  expect(html).toContain('function positionSelectMenu(trigger, menu)');
   expect(html).toContain('"Import": "Importing..."');
+  expect(html).toContain('"Save": "Saving..."');
   expect(html).toContain('button.setAttribute("aria-busy", "true")');
   expect(html).toContain('data-resource-search=');
-  expect(html).toContain('selectField("Preset", "preset", presetOptions("Default"))');
-  expect(html).toContain('data-action="create-preset"');
-  expect(html).toContain('"Create": "Creating..."');
+  expect(html).not.toContain('data-view="presets"');
+  expect(html).not.toContain("Preset");
+  expect(html).not.toContain("/api/presets");
   expect(html).toContain('synced / installed');
   expect(html).not.toContain('managed / installed');
   expect(html).toContain('read only');
-  expect(html).toContain("server.synced ? 'synced' : 'not synced'");
   expect(html).not.toContain("edit-agent-skill");
   expect(html).toContain('managed && item.scope !== "system"');
-  expect(html).toContain('<th>Name</th><th>Scope</th>');
-  expect(html).toContain('<th>Name</th><th>Scope</th><th>Description</th><th>Updated</th><th>Sync</th>');
-  expect(html).toContain('<th>Name</th><th>Transport</th><th>Endpoint</th><th>Targets</th><th>Status</th><th>Sync</th>');
+  expect(html).toContain('(filter !== "all" ? \'<th>Scope</th>\' : \'\')');
+  expect(html).toContain('state.skillFilter !== "all" || skill.scope !== "system"');
+  expect(html).toContain('function scopeSummary(kind, resources)');
+  expect(html).toContain('const label = kind === "skill" ? "Skill" : "MCP server";');
+  expect(html).toContain('searchControl("skill") + scopeSummary("skill", resources)');
+  expect(html).toContain("filter === \"all\" ? '<th>Agents</th>'");
+  expect(html).toContain('data-action="toggle-skill-agent"');
+  expect(html).toContain('aria-pressed="\' + synced + \'"');
+  expect(html).toContain('function toolIcon(tool)');
+  expect(html).toContain('<svg viewBox="0 0 320 320" aria-hidden="true">');
+  expect(html).toContain('<svg viewBox="0 0 248 248" aria-hidden="true">');
+  expect(html).toContain('<svg viewBox="0 0 512 512" aria-hidden="true">');
+  expect(html).not.toContain('function toolGlyph(tool)');
+  expect(html).toContain('data-action="delete-skill"');
+  expect(html).toContain('class="delete-icon"');
+  expect(html).toContain('class="managed-delete"');
+  expect(html).toContain('data-tool="all" aria-label="Delete managed skill ');
+  expect(html).not.toContain('data-action="sync-one-skill"');
+  expect(html).not.toContain('data-action="sync-selected-skills"');
+  expect(html).not.toContain('data-sync-selected="skill"');
+  expect(html).not.toContain('data-resource-select="skill"');
+  expect(html).not.toContain('data-resource-select-all="skill"');
+  expect(html).not.toContain('data-tool="\' + esc(filter) + \'">Remove</button>');
+  expect(html).toContain("(state.mcpFilter !== \"all\" ? '<th>Scope</th>' : '') + '<th>Transport</th><th>Endpoint</th><th>Status</th><th>'");
+  expect(html).not.toContain('<th>Targets</th>');
+  expect(html).toContain("state.mcpFilter === \"all\" ? 'Agents'");
   expect(html).not.toContain("<th>Management</th>");
-  expect(html).not.toContain("Sync to Agents");
+  expect(html).toContain('data-action="toggle-mcp-agent"');
+  expect(html).toContain('data-action="delete-mcp-agent"');
+  expect(html).toContain('aria-label="Delete managed MCP server ');
+  expect(html).not.toContain('data-action="sync-one-mcp"');
+  expect(html).not.toContain('data-action="sync-selected-mcp"');
+  expect(html).not.toContain('data-sync-selected="mcp"');
+  expect(html).not.toContain('data-resource-select="mcp"');
+  expect(html).not.toContain('data-resource-select-all="mcp"');
+  expect(html).not.toContain('data-action="import-agent-skills"');
+  expect(html).toContain('class="mode-switch" role="group" aria-label="Skill source"');
+  expect(html).toContain('name="skillAddMode" value="remote"');
+  expect(html).toContain('data-skill-add-mode-option="local" aria-pressed="false"');
+  expect(html).toContain('data-skill-add-mode-option="remote" aria-pressed="true"');
+  expect(html).toContain('form.get("skillAddMode") === "local"');
+  expect(html).toContain('api("/api/skills/import-agent"');
+  expect(html).toContain('field("Git source", "source"');
+  expect(html).toContain('toolIconChecks("skillAgents", ["all"])');
+  expect(html).toContain('input[name="skillAgents"]:checked');
+  expect(html).toContain('input[data-tool-multi]');
+  expect(html).toContain('metric("Managed skills", data.skills.length, data.status.skillsDir)');
+  expect(html).toContain('class="manager-path" aria-label="Manager home: ');
+  expect(html).toContain('.manager-path::before');
+  expect(html).toContain("esc(state.data.status.root)");
+  expect(html).toContain('function renderSkills()');
+  expect(html).toContain('view.innerHTML = \'<section>\' + sectionHead("Skill registry"');
+  expect(html).not.toContain('"Store · " + data.status.skillsDir');
+  expect(html).toContain('class="metric-note" title=');
+  expect(html).toContain('overflow-wrap: anywhere; text-overflow: clip;');
+  expect(html).not.toContain('data-action="import-agent-mcp"');
+  expect(html).toContain('class="mode-switch" role="group" aria-label="MCP add method"');
+  expect(html).toContain('data-mcp-add-mode-option="manual" aria-pressed="true"');
+  expect(html).toContain('data-mcp-add-mode-option="import" aria-pressed="false"');
+  expect(html).toContain('data-mcp-add-mode="manual"');
+  expect(html).toContain('data-mcp-add-mode="import" hidden');
+  expect(html).toContain('class="target-tool-grid"');
+  expect(html).toContain('class="target-tool-check"');
+  expect(html).toContain('.mcp-add-dialog #dynamic-form');
+  expect(html).toContain('searchControl("mcp") + scopeSummary("mcp", resources)');
+  expect(html).toContain('System MCP servers are read only');
+  expect(html).toContain('server.scope !== "system" && syncedMcpNames.has(server.name)');
+  expect(html).toContain('form.get("mcpAddMode") === "import"');
+  expect(html).toContain('api("/api/mcp/import"');
+  expect(html).not.toContain("Import to Store");
+  expect(html).toContain('state.skillFilter === "all"');
+  expect(html).toContain('async function refreshAgentSyncState(button, kind)');
+  expect(html).toContain('updateAgentSyncButton(button, kind)');
+  expect(html).toContain('refreshAgentFilterCounts(kind)');
+  const skillToggle = html.slice(html.indexOf('async function toggleSkillAgent'), html.indexOf('async function toggleMcpAgent'));
+  expect(skillToggle).toContain('refreshAgentSyncState(button, "skill")');
+  expect(skillToggle).not.toContain('await load()');
+  expect(skillToggle).not.toContain('mode: "symlink"');
+  const mcpToggle = html.slice(html.indexOf('async function toggleMcpAgent'), html.indexOf('function mcpFormBody'));
+  expect(mcpToggle).toContain('refreshAgentSyncState(button, "mcp")');
+  expect(mcpToggle).toContain('button.dataset.action === "delete-mcp-agent"');
+  expect(html).toContain('state.mcpFilter === "all"');
+  expect(html).not.toContain("Import from Agent");
   expect(html).not.toContain('data-action="sync-mcp"');
   expect(html).toContain('data-action="view-agent-mcp"');
   expect(html).toContain('data-resource-search-form=');
-  expect(html).toContain('<button type="submit" class="btn">Search</button>');
-  expect(html).toContain("Move Skills");
-  expect(html).toContain("Remove Skills");
-  expect(html).toContain("multiCheckField");
-  expect(html).toContain('form.getAll("skills")');
+  expect(html).toContain('<button type="submit" class="btn" title="Search ');
+  expect(html).not.toContain('>Move</button>');
+  expect(html).not.toContain('>Remove</button>');
+  expect(html).not.toContain('data-action="sync-skills"');
+  expect(html).not.toContain('>Move Skills</button>');
+  expect(html).not.toContain('>Remove Skills</button>');
+  expect(html).not.toContain('>Deploy to Agents</button>');
+  expect(html).not.toContain('>Deploy selected</button>');
+  expect(html).not.toContain('>Add skill</button>');
+  expect(html).not.toContain('>Add server</button>');
+  expect(html).not.toContain("multiCheckField");
   expect(html).toContain('input.row-check[type="checkbox"]');
   expect(html).toContain('width: 16px; min-width: 16px; height: 16px; min-height: 16px;');
-  expect(html).toContain("data-description=\"' + esc(description) + '\"");
-  expect(html).toContain("presetSkillTags(preset.skills)");
   expect(script).toBeTruthy();
   expect(() => new Function(script!)).not.toThrow();
   expect(denied.status).toBe(403);
   expect(crossSite.status).toBe(403);
-  expect(createdPreset.status).toBe(201);
-  expect((await createdPreset.json() as { preset: { name: string; skill_count: number } }).preset).toMatchObject({ name: "Work", skill_count: 0 });
-  expect(duplicatePreset.status).toBe(400);
   expect(snapshotText).toContain("PRIVATE_TOKEN");
   expect(snapshotText).not.toContain("must-not-leak");
   expect((await mcpDetail.json() as { server: { env: Record<string, string> } }).server.env.PRIVATE_TOKEN).toBe("must-not-leak");
@@ -151,51 +229,6 @@ test("serves the web dashboard and protects mutations", async () => {
     targetTools: ["cursor"],
     enabled: false,
   });
-});
-
-test("moves and removes multiple preset skills through the web API", async () => {
-  const managerHome = await tempRoot("tm-web-home-");
-  const skillSource = await tempRoot("tm-web-batch-skills-");
-  process.env.TOOLS_MANAGER_HOME = managerHome;
-  await mkdir(join(skillSource, "a"), { recursive: true });
-  await mkdir(join(skillSource, "b"), { recursive: true });
-  await writeFile(join(skillSource, "a", "SKILL.md"), "---\nname: Web Batch A\ndescription: First\n---\n");
-  await writeFile(join(skillSource, "b", "SKILL.md"), "---\nname: Web Batch B\ndescription: Second\n---\n");
-  await initManager();
-  const handler = createWebHandler("test-token");
-  const headers = {
-    "content-type": "application/json",
-    "x-tm-token": "test-token",
-    origin: "http://127.0.0.1:4343",
-  };
-
-  await handler(new Request("http://127.0.0.1:4343/api/skills/import", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ source: skillSource }),
-  }));
-  const moved = await handler(new Request("http://127.0.0.1:4343/api/presets/move-skill", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ names: ["web-batch-a", "web-batch-b"], from: "Default", to: "Work" }),
-  }));
-  const afterMove = await handler(new Request("http://127.0.0.1:4343/api/snapshot"));
-  const removed = await handler(new Request("http://127.0.0.1:4343/api/presets/remove-skill", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ names: ["web-batch-a", "web-batch-b"], preset: "Work" }),
-  }));
-  const afterRemove = await handler(new Request("http://127.0.0.1:4343/api/snapshot"));
-
-  expect(moved.status).toBe(200);
-  expect(await moved.json()).toMatchObject({ skills: ["web-batch-a", "web-batch-b"], count: 2 });
-  const movedSnapshot = await afterMove.json() as { presets: Array<{ name: string; skills: string[] }> };
-  expect(movedSnapshot.presets.find((preset) => preset.name === "Work")?.skills).toEqual(["web-batch-a", "web-batch-b"]);
-  expect(removed.status).toBe(200);
-  expect(await removed.json()).toMatchObject({ skills: ["web-batch-a", "web-batch-b"], count: 2 });
-  const removedSnapshot = await afterRemove.json() as { presets: Array<{ name: string; skills: string[] }>; skills: Array<{ name: string }> };
-  expect(removedSnapshot.presets.find((preset) => preset.name === "Work")?.skills).toEqual([]);
-  expect(removedSnapshot.skills.map((skill) => skill.name)).toEqual(expect.arrayContaining(["web-batch-a", "web-batch-b"]));
 });
 
 test("exposes browser reload events only in development mode", async () => {
@@ -232,7 +265,7 @@ test("imports, inspects, and removes a skill through the web API", async () => {
   const imported = await handler(new Request("http://127.0.0.1:4343/api/skills/import", {
     method: "POST",
     headers,
-    body: JSON.stringify({ source: skillSource, preset: "Work" }),
+    body: JSON.stringify({ source: skillSource }),
   }));
   const importedSnapshot = await handler(new Request("http://127.0.0.1:4343/api/snapshot"));
   const updated = await handler(new Request("http://127.0.0.1:4343/api/skills/web-managed", {
@@ -259,9 +292,7 @@ test("imports, inspects, and removes a skill through the web API", async () => {
 
   expect(imported.status).toBe(201);
   expect((await imported.json() as { skills: Array<{ name: string }> }).skills[0]?.name).toBe("web-managed");
-  const importedSnapshotBody = await importedSnapshot.json() as { presets: Array<{ name: string; skills: string[] }>; skills: Array<{ name: string; scope: string; editable: boolean }> };
-  expect(importedSnapshotBody.presets.find((preset) => preset.name === "Work")?.skills).toContain("web-managed");
-  expect(importedSnapshotBody.presets.find((preset) => preset.name === "Default")?.skills).not.toContain("web-managed");
+  const importedSnapshotBody = await importedSnapshot.json() as { skills: Array<{ name: string; scope: string; editable: boolean }> };
   expect(importedSnapshotBody.skills.find((skill) => skill.name === "web-managed")).toMatchObject({ scope: "user", editable: true });
   expect(updated.status).toBe(200);
   expect(detail.status).toBe(200);

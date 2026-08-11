@@ -7,7 +7,6 @@ Tools Manager (`tm`) 是一个基于 Bun 的本地管理工具，用来统一管
 它提供一个本地统一管理入口：
 
 * Skills 存放在 `~/.tools-manager/skills`
-* Skill presets 用来按 Agent 或工作流给 skills 分组
 * MCP servers 存储在 Tools Manager 数据库中，并可同步到各 Agent 的配置文件
 
 **推荐使用 Web 管理台完成日常操作。** 安装后运行 `tm web` 即可打开。
@@ -49,7 +48,7 @@ tm init
 tm web
 ```
 
-进入管理台后，可以从 Agent 导入已有 skills、管理 presets 和 MCP servers，并将选定内容同步回目标 Agent。
+进入管理台后，可以从 Agent 导入已有 skills、管理 MCP servers，并将内容同步回目标 Agent。
 
 如果还没有 link 或安装这个包，可以使用：
 
@@ -76,9 +75,8 @@ tm web
 
 ![Tools Manager Web 管理台](docs/images/web-dashboard.png)
 
-管理台复用 CLI 的核心能力，可以管理 skills、presets、MCP servers，执行 Agent 导入与同步，以及 Git 备份。
+管理台复用 CLI 的核心能力，可以管理 skills、MCP servers，执行 Agent 导入与同步，以及 Git 备份。
 
-* 导入 skill 时可以指定 preset，默认加入 `Default`。
 * Skills 和 MCP 视图输入关键词后通过 Search 按钮或 Enter 执行搜索，`All` 视图还支持单项同步、多选和全选同步。
 * Agent 筛选会展示该 Agent 的完整已安装资源：受管资源保留操作，点击未受管资源名称可查看只读详情，但不能编辑、同步或删除。
 * Agent Readiness 使用 `已同步数 / 已安装总数` 展示数量。
@@ -109,13 +107,12 @@ TOOLS_MANAGER_HOME=/tmp/tools-manager-dev bun run web
 
 ## 命令行工具
 
-需要脚本化操作或偏好终端工作流时，可以直接使用 CLI。下面的命令会导入所有本地 Agent 中已有的 skills，并把 Default preset 同步回所有支持的 Agent：
+需要脚本化操作或偏好终端工作流时，可以直接使用 CLI。下面的命令会导入所有本地 Agent 中已有的 skills：
 
 ```bash
 tm init
 tm skills add --tool all
 tm skills list
-tm presets apply Default
 ```
 
 不想记子命令时，运行无参数的 `tm` 打开交互式命令菜单：
@@ -126,7 +123,7 @@ tm
 
 ![Tools Manager CLI 交互菜单](docs/images/cli.png)
 
-菜单支持用方向键选择常用的 skill、skill preset、MCP、agent 和 backup 命令。菜单包含手动添加 skill source、手动添加 MCP server、从已有 Agent 导入的流程。涉及 tool 参数时会进入选项选择器，默认选择 `all`。命令执行后，按 `Enter` 或 `Esc` 返回菜单。
+菜单支持用方向键选择常用的 skill、MCP、agent 和 backup 命令。菜单包含手动添加 skill source、手动添加 MCP server、从已有 Agent 导入的流程。涉及 tool 参数时会进入选项选择器，默认选择 `all`。命令执行后，按 `Enter` 或 `Esc` 返回菜单。
 
 ## Skills
 
@@ -136,7 +133,6 @@ tm
 
 ```bash
 tm skills add ./my-skill
-tm skills add ./work-skill --preset Work
 ```
 
 从某一个本地 Agent 导入已有 skills：
@@ -203,7 +199,7 @@ tm skills remove my-skill
 tm skills remove my-skill --yes
 ```
 
-只删除某个 Agent 的受管 symlink，同时保留 tm source、preset 关系和其他 Agent 链接：
+只删除某个 Agent 的受管 symlink，同时保留 tm source 和其他 Agent 链接：
 
 ```bash
 tm skills unlink my-skill --tool codex
@@ -218,67 +214,9 @@ tm skills sync-selected my-skill --tool cursor
 tm skills sync-selected skill-a skill-b --tool all --mode copy
 ```
 
-需要一起维护和应用一组 skills 时，使用 preset：
-
-```bash
-tm presets apply Default
-tm presets apply Work --tool codex --mode symlink
-```
-
-两个命令都默认使用 `--tool all`，并遵循配置中的 `sync_mode`。传入 `--mode symlink` 或 `--mode copy` 可以覆盖本次执行。`tm skills sync [preset]` 仍作为应用 preset 的兼容命令保留。
+命令默认使用 `--tool all`，并遵循配置中的 `sync_mode`。传入 `--mode symlink` 或 `--mode copy` 可以覆盖本次执行。
 
 无参数 `tm` 交互菜单为选定 skill 同步提供 checkbox 式多选流程。
-
-## Skill Presets
-
-Skill presets 是命名的 skill 分组，用来决定哪些 skills 要一起同步。
-
-例如，日常使用的 skills 可以放在 `Default`，工作专用的 skills 可以放在 `Work`。导入的 skills 会自动加入 `Default`。
-
-### 创建和应用 Presets
-
-新建一个空的 skill preset：
-
-```bash
-tm presets create Work
-```
-
-列出 skill presets：
-
-```bash
-tm presets list
-```
-
-把 preset 应用到 Agent：
-
-```bash
-tm presets apply Default
-tm presets apply Work --tool cursor --mode copy
-```
-
-### 调整 Preset 成员
-
-把一个或多个 skill 从一个 preset 移动到另一个 preset：
-
-```bash
-tm presets move-skill my-skill Default Work
-tm presets move-skills Default Work skill-a skill-b
-```
-
-只把一个或多个 skill 从 preset 中移除，不删除托管 skill 或 Agent 链接：
-
-```bash
-tm presets remove-skill my-skill Work
-tm presets remove-skills Work skill-a skill-b
-```
-
-把一个 preset 里的所有 skills 移动到另一个 preset：
-
-```bash
-tm presets move Default Work
-```
-
-调整 preset 分组后，使用 `tm presets apply` 把当前分组写入 Agent skill 目录。
 
 ## MCP Servers
 
@@ -376,23 +314,14 @@ tm init
 tm web [--port <port>] [--no-open] [--dev]
 tm status [--json]
 tm agents list [--tool <tool|all>] [--json]
-tm skills add <source> [--preset <name>]
-tm skills add --tool <tool|all> [--preset <name>]
+tm skills add <source>
+tm skills add --tool <tool|all>
 tm skills list [--json]
 tm skills list --tool <tool|all> [--json]
 tm skills show <name> [--json]
 tm skills remove <name> [--yes]
 tm skills unlink <name> --tool <codex|claude_code|cursor|opencode>
 tm skills sync-selected <name...> [--tool <tool|all>] [--mode <symlink|copy>]
-tm skills sync [preset] [--tool <tool|all>] [--mode <symlink|copy>]
-tm presets create <name>
-tm presets list [--json]
-tm presets apply [preset] [--tool <tool|all>] [--mode <symlink|copy>]
-tm presets move-skill <skill> <from> <to>
-tm presets move-skills <from> <to> <skill...>
-tm presets remove-skill <skill> <preset>
-tm presets remove-skills <preset> <skill...>
-tm presets move <from> <to>
 tm mcp add <name> (--command <cmd> [--arg value] [--env K=V] | --url <url> [--header K=V]) [--tool <tool|all>]
 tm mcp add --tool <tool|all>
 tm mcp list [--json]
@@ -504,6 +433,6 @@ tm status
 * `tm skills add` 支持本地文件夹、GitHub URL、内部 GitLab URL、SSH Git URL，以及 `#ref:path/to/skill`。
 * Git 认证交给本地 Git 配置处理：SSH keys、VPN、credential helpers 和 tokens。启用 2FA 的私有 HTTPS 仓库需要 personal access token，或改用 SSH Git URL。
 * `tm skills add --codex` 和 `tm skills add --all` 会作为兼容别名保留。
-* `tm skills remove` 会删除托管 skill 文件、移除 preset membership，并在确认后移除指向托管 source 的 Agent symlinks。
+* `tm skills remove` 会删除托管 skill 文件，并在确认后移除指向托管 source 的 Agent symlinks。
 * `tm mcp remove` 只会从 Tools Manager 删除 server；运行 `tm mcp sync` 后才会更新 Agent 配置文件。
 * `--json` 可用于 list/status 类命令，方便脚本调用。

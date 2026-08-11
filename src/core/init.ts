@@ -4,7 +4,7 @@ import { openDb } from "./db";
 import { ensureDir, pathExists } from "./fs";
 import { paths } from "./paths";
 import { ensureConfig } from "./config";
-import { addSkillToPreset, readSkillMetadata, slug } from "./skill";
+import { readSkillMetadata, slug } from "./skill";
 
 export async function initManager(): Promise<void> {
   const p = paths();
@@ -56,6 +56,4 @@ async function installBuiltinSkill(sourceDir: string, skillFile: string): Promis
       source_commit = excluded.source_commit,
       updated_at = CURRENT_TIMESTAMP
   `).run(name, meta.description, target);
-  const skill = db.query("SELECT id FROM skills WHERE name = ?").get(name) as { id: number };
-  await addSkillToPreset(skill.id);
 }

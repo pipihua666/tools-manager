@@ -92,21 +92,26 @@ export const webAppHtml = String.raw`<!doctype html>
     #view.view-enter > * { animation: view-in .36s cubic-bezier(.2, .7, .2, 1) both; }
     #view.view-enter > *:nth-child(2) { animation-delay: .055s; }
     #view.view-enter > *:nth-child(3) { animation-delay: .1s; }
-    .metrics { display: grid; grid-template-columns: 1.22fr repeat(3, minmax(0, 1fr)); border-top: 2px solid var(--ink); border-bottom: 1px solid var(--line-strong); background: var(--panel); }
+    .metrics { display: grid; grid-template-columns: 1.22fr repeat(2, minmax(0, 1fr)); border-top: 2px solid var(--ink); border-bottom: 1px solid var(--line-strong); background: var(--panel); }
     .metric { position: relative; min-height: 124px; padding: 22px 20px 18px 44px; border-right: 1px solid var(--line); overflow: hidden; }
     .metric:last-child { border-right: 0; }
     .metric::before { position: absolute; left: 14px; top: 23px; color: #9aa39d; font: 9px/1 var(--mono); }
     .metric:nth-child(1)::before { content: "01"; }
     .metric:nth-child(2)::before { content: "02"; }
     .metric:nth-child(3)::before { content: "03"; }
-    .metric:nth-child(4)::before { content: "04"; }
     .metric:first-child { background: var(--graphite); color: white; }
-    .metric:first-child::after { content: ""; position: absolute; right: -28px; bottom: -32px; width: 90px; height: 90px; border: 12px solid var(--accent); transform: rotate(45deg); opacity: .9; }
-    .metric:first-child .metric-label, .metric:first-child .metric-note { color: #9fa9a2; }
+    .metric:first-child > * { position: relative; z-index: 1; }
+    .metric:first-child::after { content: ""; position: absolute; right: -28px; bottom: -32px; z-index: 0; width: 90px; height: 90px; border: 12px solid var(--accent); transform: rotate(45deg); opacity: .55; pointer-events: none; }
+    .metric:first-child .metric-label { color: #9fa9a2; }
+    .metric:first-child .metric-note { width: fit-content; max-width: 100%; padding: 6px 8px; border-left: 2px solid var(--accent); background: #0c110e; color: #cbd3ce; white-space: normal; overflow-wrap: anywhere; text-overflow: clip; line-height: 1.35; }
     .metric:first-child::before { color: var(--accent); }
     .metric-label { color: var(--muted); font: 700 9px/1 var(--mono); text-transform: uppercase; }
     .metric-value { margin-top: 14px; font: 800 36px/.9 var(--display); }
     .metric-note { margin-top: 12px; color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .manager-path { width: fit-content; max-width: 100%; display: flex; align-items: center; gap: 9px; margin-top: 12px; padding-left: 2px; color: #657069; font: 10px/1.45 var(--mono); transition: color .14s ease, transform .14s ease; }
+    .manager-path::before { content: ""; width: 7px; height: 7px; flex: 0 0 7px; background: var(--accent-strong); transform: rotate(45deg); }
+    .manager-path:hover { color: var(--ink); transform: translateX(2px); }
+    .manager-path code { min-width: 0; color: inherit; overflow-wrap: anywhere; }
     .section { margin-top: 40px; }
     .section-head { min-height: 42px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
     .section-head > div:first-child { display: grid; grid-template-columns: auto 1fr; align-items: baseline; column-gap: 12px; }
@@ -116,6 +121,10 @@ export const webAppHtml = String.raw`<!doctype html>
     .toolbar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
     .resource-controls { min-width: 0; display: grid; gap: 10px; margin-bottom: 12px; }
     .resource-action-row { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .scope-summary { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .scope-stat { min-height: 40px; display: inline-flex; align-items: center; gap: 9px; padding: 7px 10px; border: 1px solid var(--line-strong); background: var(--panel); color: var(--muted); font: 700 9px/1 var(--mono); text-transform: uppercase; }
+    .scope-stat strong { min-width: 22px; height: 22px; display: inline-grid; place-items: center; padding: 0 5px; border: 1px solid var(--line); background: #f1f8dc; color: #536b1c; font-size: 9px; }
+    .scope-stat.system strong { border-color: #e3bf75; background: #fff7e5; color: #845c12; }
     .filter-strip { min-width: 0; display: inline-flex; align-items: center; gap: 3px; padding: 3px; border: 1px solid var(--line-strong); background: #e7eae3; overflow-x: auto; scrollbar-width: none; }
     .filter-strip::-webkit-scrollbar { display: none; }
     .filter-button { min-height: 32px; display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; border: 0; border-radius: 1px; background: transparent; color: #5c6660; white-space: nowrap; font: 700 9px/1 var(--mono); text-transform: uppercase; }
@@ -141,6 +150,25 @@ export const webAppHtml = String.raw`<!doctype html>
     .btn.danger { border-color: #e0aaa6; color: #a43b35; background: #fffafa; }
     .btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
     .btn.icon { width: 37px; padding: 0; font: 700 16px/1 var(--mono); }
+    .agent-sync-list { display: flex; align-items: center; gap: 6px; min-width: max-content; }
+    .agent-sync, .delete-icon {
+      width: 38px; min-width: 38px; height: 38px; min-height: 38px; display: inline-grid; place-items: center; padding: 0;
+      border: 1px solid transparent; border-radius: 50%; background: transparent; color: #9ba39f;
+      transition: color .14s ease, border-color .14s ease, background-color .14s ease, box-shadow .14s ease, transform .14s ease;
+    }
+    .agent-sync:hover { border-color: #b7c0ba; background: #f0f3ed; color: var(--ink); transform: translateY(-1px); }
+    .agent-sync[aria-pressed="true"] { border-color: #a9d9c7; background: #e9f7f1; color: var(--ink); box-shadow: inset 0 0 0 1px rgba(62, 142, 112, .08); }
+    .agent-sync[aria-pressed="true"]:hover { border-color: #e0aaa6; background: #fff3f1; color: #a43b35; }
+    .agent-sync:disabled, .delete-icon:disabled { cursor: not-allowed; opacity: .42; transform: none; }
+    .agent-glyph { width: 20px; height: 20px; display: grid; place-items: center; }
+    .agent-glyph svg { width: 100%; height: 100%; display: block; fill: currentColor; }
+    .agent-glyph.claude_code { width: 21px; height: 21px; }
+    .agent-glyph.cursor { width: 19px; height: 19px; }
+    .delete-icon { border-radius: 2px; color: #a43b35; }
+    .delete-icon:hover:not(:disabled) { border-color: #e0aaa6; background: #fff3f1; transform: translateY(-1px); }
+    .delete-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .managed-delete { display: flex; align-items: center; margin-left: 4px; padding-left: 10px; border-left: 1px solid var(--line); }
+    .managed-delete .delete-icon { border-color: #e0aaa6; background: #fffafa; }
     .table-wrap { width: 100%; overflow: auto; border: 1px solid var(--line-strong); border-top: 0; background: var(--panel); box-shadow: 5px 5px 0 rgba(16, 21, 19, .07); }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th { position: sticky; top: 0; z-index: 1; padding: 12px; border-bottom: 1px solid #343b37; background: var(--graphite); color: #aeb7b1; font: 700 9px/1 var(--mono); text-align: left; text-transform: uppercase; vertical-align: middle; white-space: nowrap; }
@@ -158,17 +186,6 @@ export const webAppHtml = String.raw`<!doctype html>
     .tag.green { border-color: #b4cf6f; background: #f1f8dc; color: #536b1c; }
     .tag.amber { border-color: #e3bf75; background: #fff7e5; color: #845c12; }
     .tag.red { border-color: #e5b0ab; background: var(--red-soft); color: #973a34; }
-    .tags { display: flex; gap: 4px; flex-wrap: wrap; }
-    .preset-skill-tag { position: relative; cursor: help; }
-    .preset-skill-tag::after {
-      content: attr(data-description); position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 8;
-      width: max-content; max-width: min(360px, calc(100vw - 48px)); padding: 9px 11px;
-      border: 1px solid #4f5953; border-radius: 2px; background: var(--graphite); color: #f5f7f2;
-      box-shadow: 4px 5px 0 rgba(16, 21, 19, .16); font: 10px/1.45 var(--body); text-transform: none;
-      white-space: normal; overflow-wrap: anywhere; pointer-events: none; opacity: 0; visibility: hidden;
-      transform: translateY(3px); transition: opacity .12s ease, transform .12s ease, visibility .12s ease;
-    }
-    .preset-skill-tag:hover::after, .preset-skill-tag:focus-visible::after { opacity: 1; visibility: visible; transform: translateY(0); }
     .dot { width: 8px; height: 8px; display: inline-block; border-radius: 50%; background: #aeb5b9; }
     .dot.online { background: var(--accent-strong); box-shadow: 0 0 0 3px #edf6d8; }
     .agent-table { min-width: 1080px; table-layout: fixed; }
@@ -183,21 +200,23 @@ export const webAppHtml = String.raw`<!doctype html>
     .empty { padding: 60px 20px; border: 1px solid var(--line-strong); border-top: 2px solid var(--ink); background: var(--panel); text-align: center; }
     .empty strong { display: block; font-size: 15px; }
     .empty span { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; }
-    .preset-list { border: 1px solid var(--line-strong); border-top: 2px solid var(--ink); box-shadow: 5px 5px 0 rgba(16, 21, 19, .07); }
-    .preset-row { position: relative; display: grid; grid-template-columns: 190px minmax(0, 1fr) auto; gap: 24px; align-items: center; padding: 20px 14px 20px 22px; border-bottom: 1px solid var(--line); background: var(--panel); }
-    .preset-row::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); opacity: 0; transition: opacity .14s ease; }
-    .preset-row:hover::before { opacity: 1; }
-    .preset-title { font: 700 16px/1 var(--display); text-transform: uppercase; }
-    .preset-count { margin-top: 6px; color: var(--muted); font: 9px/1 var(--mono); }
     .command { max-width: 420px; padding: 8px 10px; background: #edf0e9; border-left: 3px solid var(--blue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 10px/1.3 var(--mono); }
-    dialog { width: min(620px, calc(100vw - 28px)); max-height: calc(100vh - 36px); padding: 0; border: 1px solid #747e78; border-top: 4px solid var(--accent); border-radius: var(--radius); background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+    dialog {
+      width: min(620px, calc(100vw - 28px)); max-width: none; max-height: calc(100vh - 36px); max-height: calc(100dvh - 36px); padding: 0;
+      overflow: hidden; border: 1px solid #747e78; border-top: 4px solid var(--accent); border-radius: var(--radius);
+      background: var(--panel); color: var(--ink); box-shadow: var(--shadow);
+    }
     dialog[open] { animation: dialog-in .18s cubic-bezier(.2, .75, .25, 1); }
     dialog::backdrop { background: rgba(11, 15, 13, .64); backdrop-filter: blur(3px); }
+    #dynamic-form { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px); }
+    #detail-dialog[open], #confirm-dialog[open] { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
     .dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 20px; border-bottom: 1px solid var(--line); background: #f2f4ee; }
     .dialog-head h2 { font-size: 17px; }
-    .dialog-body { padding: 22px 24px 24px; overflow: auto; }
+    .dialog-body { min-height: 0; padding: 22px 24px 24px; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
     .dialog-actions { position: relative; z-index: 1; display: flex; justify-content: flex-end; gap: 8px; padding: 16px 24px; border-top: 1px solid var(--line); background: #ecefe8; }
     #form-body { display: grid; gap: 18px; }
+    [data-mcp-transport], [data-mcp-add-mode], [data-skill-add-mode] { display: grid; gap: 18px; }
+    [data-mcp-transport][hidden], [data-mcp-add-mode][hidden], [data-skill-add-mode][hidden] { display: none; }
     .field { display: grid; gap: 8px; margin: 0; }
     .field label, .field-label { color: #4b5550; font: 700 10px/1.2 var(--mono); text-transform: uppercase; }
     .field input, .field textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 2px; background: #fdfefb; color: var(--ink); transition: border-color .14s ease, box-shadow .14s ease, background .14s ease; }
@@ -222,7 +241,7 @@ export const webAppHtml = String.raw`<!doctype html>
     .select-shell.open .select-trigger::after { top: 19px; transform: rotate(225deg); }
     .select-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .select-menu {
-      position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; right: 0; max-height: 224px; overflow: auto; padding: 5px;
+      position: fixed; z-index: 80; max-height: 224px; overflow: auto; padding: 5px;
       border: 1px solid #4b554f; border-radius: 2px; background: var(--graphite); box-shadow: 7px 8px 0 rgba(16, 21, 19, .16), 0 18px 36px rgba(16, 21, 19, .22);
       animation: menu-in .14s cubic-bezier(.2, .75, .25, 1);
     }
@@ -234,9 +253,22 @@ export const webAppHtml = String.raw`<!doctype html>
     .select-option:hover, .select-option:focus { border-left-color: var(--blue); background: #29312d; color: white; outline: 0; }
     .select-option[aria-selected="true"] { border-left-color: var(--accent); background: var(--accent); color: var(--ink); font-weight: 700; }
     .select-option[aria-selected="true"]::after { content: ""; position: absolute; right: 14px; width: 7px; height: 7px; background: var(--ink); transform: rotate(45deg); }
-    #form-dialog:has(.select-shell) { overflow: visible; }
-    #form-dialog:has(.select-shell) .dialog-body { overflow: visible; }
+    .mode-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; padding: 3px; border: 1px solid var(--line-strong); background: #e7eae3; }
+    .mode-switch button { min-height: 36px; padding: 7px 12px; border: 0; background: transparent; color: #5c6660; font: 700 10px/1 var(--mono); text-transform: uppercase; }
+    .mode-switch button:hover { background: #f4f6f1; color: var(--ink); }
+    .mode-switch button[aria-pressed="true"] { background: var(--graphite); color: white; box-shadow: inset 0 -2px 0 var(--accent); }
     .check-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .target-tool-grid { display: grid; grid-template-columns: repeat(5, 44px); gap: 8px; }
+    .target-tool-check { position: relative; width: 44px; height: 44px; }
+    .target-tool-check input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    .target-tool-icon {
+      width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 50%;
+      background: #f7f9f4; color: #4e5852; transition: border-color .12s ease, background-color .12s ease, color .12s ease, box-shadow .12s ease;
+    }
+    .target-tool-icon svg { width: 21px; height: 21px; fill: currentColor; }
+    .target-tool-check:hover .target-tool-icon { border-color: #657068; background: white; color: var(--ink); }
+    .target-tool-check input:checked + .target-tool-icon { border-color: var(--accent-strong); background: var(--accent); color: var(--ink); box-shadow: inset 0 0 0 1px rgba(16, 21, 19, .14); }
+    .target-tool-check input:focus-visible + .target-tool-icon { outline: 3px solid rgba(23, 109, 146, .26); outline-offset: 2px; }
     .check { min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 2px; background: #f7f9f4; font-size: 11px; }
     .check input[type="checkbox"], input.row-check[type="checkbox"] {
       appearance: none; -webkit-appearance: none; width: 16px; min-width: 16px; height: 16px; min-height: 16px;
@@ -265,7 +297,9 @@ export const webAppHtml = String.raw`<!doctype html>
     .toast { padding: 13px 15px; border: 1px solid #707a74; border-left: 4px solid var(--accent); border-radius: 2px; background: var(--graphite); color: white; box-shadow: var(--shadow); font-size: 11px; animation: toast-in .18s ease-out; }
     .toast.error { border-left-color: #e7655d; }
     .btn.loading { cursor: wait; }
+    .mcp-add-dialog #dynamic-form { height: min(680px, calc(100vh - 40px)); height: min(680px, calc(100dvh - 40px)); }
     .btn.loading::before { content: ""; width: 13px; height: 13px; flex: 0 0 13px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .75s linear infinite; }
+    .agent-sync.loading .agent-glyph { display: none; }
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes pulse { 50% { opacity: .48; transform: scale(.82); } }
     @keyframes view-in { from { opacity: 0; transform: translateY(10px); } }
@@ -289,6 +323,10 @@ export const webAppHtml = String.raw`<!doctype html>
       h1 { font-size: 26px; }
       .content { padding: 22px 18px 44px; }
       .resource-action-row { align-items: stretch; flex-direction: column; }
+      .resource-action-row.agent-skill-row { align-items: center; flex-direction: row; gap: 10px; }
+      .agent-skill-row .resource-search-form { width: auto; min-width: 0; flex: 1 1 auto; }
+      .agent-skill-row .scope-summary { flex: 0 0 auto; flex-wrap: nowrap; gap: 4px; }
+      .agent-skill-row .scope-stat { gap: 5px; padding: 6px; }
       .resource-search-form { width: 100%; }
       .filter-strip { width: 100%; }
       .resource-controls .toolbar { justify-content: flex-start; }
@@ -296,8 +334,6 @@ export const webAppHtml = String.raw`<!doctype html>
       .metric:nth-child(2) { border-right: 0; }
       .metric:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
       .metric { min-height: 110px; }
-      .preset-row { grid-template-columns: 1fr auto; gap: 12px; }
-      .preset-row .tags { grid-column: 1 / -1; grid-row: 2; }
     }
     @media (max-width: 560px) {
       .brand { display: none; }
@@ -318,10 +354,17 @@ export const webAppHtml = String.raw`<!doctype html>
       .section-head { align-items: stretch; flex-direction: column; }
       .toolbar { justify-content: flex-start; }
       .check-grid { grid-template-columns: 1fr; }
-      .dialog-actions { position: sticky; bottom: 0; }
-      .preset-row { grid-template-columns: 1fr; }
-      .preset-row .tags { grid-column: 1; grid-row: auto; }
-      .preset-row .row-actions { justify-content: flex-start; }
+      .target-tool-grid { grid-template-columns: repeat(5, 40px); gap: 6px; }
+      .target-tool-check, .target-tool-icon { width: 40px; height: 40px; }
+      dialog { width: calc(100vw - 16px); max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); }
+      #dynamic-form { max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); }
+      .mcp-add-dialog #dynamic-form { height: calc(100vh - 20px); height: calc(100dvh - 20px); }
+      .dialog-head { gap: 12px; padding: 14px 14px 13px; }
+      .dialog-head h2 { min-width: 0; font-size: 15px; overflow-wrap: anywhere; }
+      .dialog-body { padding: 16px; }
+      .dialog-actions { position: static; padding: 12px 16px; }
+      #form-body, [data-mcp-transport], [data-mcp-add-mode], [data-skill-add-mode] { gap: 14px; }
+      .field textarea { min-height: 88px; }
       th, td { padding: 11px 9px; }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -337,8 +380,7 @@ export const webAppHtml = String.raw`<!doctype html>
         <div class="nav-label">Workspace</div>
         <button data-view="dashboard"><span class="nav-code">01</span><span>Dashboard</span></button>
         <button data-view="skills"><span class="nav-code">02</span><span>Skills</span></button>
-        <button data-view="presets"><span class="nav-code">03</span><span>Presets</span></button>
-        <button data-view="mcp"><span class="nav-code">04</span><span>MCP Servers</span></button>
+        <button data-view="mcp"><span class="nav-code">03</span><span>MCP Servers</span></button>
       </nav>
       <div class="sidebar-foot"><div class="connection-line"><span class="status-pulse"></span><span>LOCAL SESSION</span></div><div id="server-address"></div></div>
     </aside>
@@ -360,7 +402,6 @@ export const webAppHtml = String.raw`<!doctype html>
     const titles = {
       dashboard: ["Workspace overview", "Dashboard"],
       skills: ["Managed resources", "Skills"],
-      presets: ["Deployment groups", "Skill Presets"],
       mcp: ["Managed integrations", "MCP Servers"]
     };
 
@@ -377,22 +418,6 @@ export const webAppHtml = String.raw`<!doctype html>
     function toolOptions(selected) {
       return TOOLS.map(function(tool) { return { value: tool, label: tool, selected: tool === selected }; });
     }
-    function presetOptions(selected) {
-      return state.data.presets.map(function(preset) { return { value: preset.name, label: preset.name, selected: preset.name === selected }; });
-    }
-    function tags(items, tone) {
-      if (!items || !items.length) return '<span class="muted">none</span>';
-      return '<div class="tags">' + items.map(function(item) { return '<span class="tag ' + (tone || '') + '">' + esc(item) + '</span>'; }).join("") + '</div>';
-    }
-    function presetSkillTags(items) {
-      if (!items || !items.length) return '<span class="muted">none</span>';
-      const skills = new Map(state.data.skills.map(function(skill) { return [skill.name, skill]; }));
-      return '<div class="tags">' + items.map(function(name) {
-        const skill = skills.get(name);
-        const description = skill && skill.description ? skill.description : "No description";
-        return '<span class="tag green preset-skill-tag" tabindex="0" data-description="' + esc(description) + '" aria-label="' + esc(name + ': ' + description) + '">' + esc(name) + '</span>';
-      }).join("") + '</div>';
-    }
     function empty(title, note) { return '<div class="empty"><strong>' + esc(title) + '</strong><span>' + esc(note) + '</span></div>'; }
     function sectionHead(title, note, actions) { return '<div class="section-head"><div><h2>' + esc(title) + '</h2><p class="section-note">' + esc(note) + '</p></div><div class="toolbar">' + (actions || '') + '</div></div>'; }
     function toolLabel(tool) {
@@ -400,14 +425,30 @@ export const webAppHtml = String.raw`<!doctype html>
       const agent = state.data.agents.find(function(item) { return item.tool === tool; });
       return agent ? agent.displayName : tool;
     }
+    function toolIcon(tool) {
+      const icons = {
+        all: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+        codex: '<svg viewBox="0 0 320 320" aria-hidden="true"><path d="m297.06 130.97c7.26-21.79 4.76-45.66-6.85-65.48-17.46-30.4-52.56-46.04-86.84-38.68-15.25-17.18-37.16-26.95-60.13-26.81-35.04-.08-66.13 22.48-76.91 55.82-22.51 4.61-41.94 18.7-53.31 38.67-17.59 30.32-13.58 68.54 9.92 94.54-7.26 21.79-4.76 45.66 6.85 65.48 17.46 30.4 52.56 46.04 86.84 38.68 15.24 17.18 37.16 26.95 60.13 26.8 35.06.09 66.16-22.49 76.94-55.86 22.51-4.61 41.94-18.7 53.31-38.67 17.57-30.32 13.55-68.51-9.94-94.51zm-120.28 168.11c-14.03.02-27.62-4.89-38.39-13.88.49-.26 1.34-.73 1.89-1.07l63.72-36.8c3.26-1.85 5.26-5.32 5.24-9.07v-89.83l26.93 15.55c.29.14.48.42.52.74v74.39c-.04 33.08-26.83 59.9-59.91 59.97zm-128.84-55.03c-7.03-12.14-9.56-26.37-7.15-40.18.47.28 1.3.79 1.89 1.13l63.72 36.8c3.23 1.89 7.23 1.89 10.47 0l77.79-44.92v31.1c.02.32-.13.63-.38.83l-64.41 37.19c-28.69 16.52-65.33 6.7-81.92-21.95zm-16.77-139.09c7-12.16 18.05-21.46 31.21-26.29 0 .55-.03 1.52-.03 2.2v73.61c-.02 3.74 1.98 7.21 5.23 9.06l77.79 44.91-26.93 15.55c-.27.18-.61.21-.91.08l-64.42-37.22c-28.63-16.58-38.45-53.21-21.95-81.89zm221.26 51.49-77.79-44.92 26.93-15.54c.27-.18.61-.21.91-.08l64.42 37.19c28.68 16.57 38.51 53.26 21.94 81.94-7.01 12.14-18.05 21.44-31.2 26.28v-75.81c.03-3.74-1.96-7.2-5.2-9.06zm26.8-40.34c-.47-.29-1.3-.79-1.89-1.13l-63.72-36.8c-3.23-1.89-7.23-1.89-10.47 0l-77.79 44.92v-31.1c-.02-.32.13-.63.38-.83l64.41-37.16c28.69-16.55 65.37-6.7 81.91 22 6.99 12.12 9.52 26.31 7.15 40.1zm-168.51 55.43-26.94-15.55c-.29-.14-.48-.42-.52-.74v-74.39c.02-33.12 26.89-59.96 60.01-59.94 14.01 0 27.57 4.92 38.34 13.88-.49.26-1.33.73-1.89 1.07l-63.72 36.8c-3.26 1.85-5.26 5.31-5.24 9.06l-.04 89.79zm14.63-31.54 34.65-20.01 34.65 20v40.01l-34.65 20-34.65-20z"/></svg>',
+        claude_code: '<svg viewBox="0 0 248 248" aria-hidden="true"><path d="M52.4285 162.873L98.7844 136.879L99.5485 134.602L98.7844 133.334H96.4921L88.7237 132.862L62.2346 132.153L39.3113 131.207L17.0249 130.026L11.4214 128.844L6.2 121.873L6.7094 118.447L11.4214 115.257L18.171 115.847L33.0711 116.911L55.485 118.447L71.6586 119.392L95.728 121.873H99.5485L100.058 120.337L98.7844 119.392L97.7656 118.447L74.5877 102.732L49.4995 86.1905L36.3823 76.62L29.3779 71.7757L25.8121 67.2858L24.2839 57.3608L30.6515 50.2716L39.3113 50.8623L41.4763 51.4531L50.2636 58.1879L68.9842 72.7209L93.4357 90.6804L97.0015 93.6343L98.4374 92.6652L98.6571 91.9801L97.0015 89.2625L83.757 65.2772L69.621 40.8192L63.2534 30.6579L61.5978 24.632C60.9565 22.1032 60.579 20.0111 60.579 17.4246L67.8381 7.49965L71.9133 6.19995L81.7193 7.49965L85.7946 11.0443L91.9074 24.9865L101.714 46.8451L116.996 76.62L121.453 85.4816L123.873 93.6343L124.764 96.1155H126.292V94.6976L127.566 77.9197L129.858 57.3608L132.15 30.8942L132.915 23.4505L136.608 14.4708L143.994 9.62643L149.725 12.344L154.437 19.0788L153.8 23.4505L150.998 41.6463L145.522 70.1215L141.957 89.2625H143.994L146.414 86.7813L156.093 74.0206L172.266 53.698L179.398 45.6635L187.803 36.802L193.152 32.5484H203.34L210.726 43.6549L207.415 55.1159L196.972 68.3492L188.312 79.5739L175.896 96.2095L168.191 109.585L168.882 110.689L170.738 110.53L198.755 104.504L213.91 101.787L231.994 98.7149L240.144 102.496L241.036 106.395L237.852 114.311L218.495 119.037L195.826 123.645L162.07 131.592L161.696 131.893L162.137 132.547L177.36 133.925L183.855 134.279H199.774L229.447 136.524L237.215 141.605L241.8 147.867L241.036 152.711L229.065 158.737L213.019 154.956L175.45 145.977L162.587 142.787H160.805V143.85L171.502 154.366L191.242 172.089L215.82 195.011L217.094 200.682L213.91 205.172L210.599 204.699L188.949 188.394L180.544 181.069L161.696 165.118H160.422V166.772L164.752 173.152L187.803 207.771L188.949 218.405L187.294 221.832L181.308 223.959L174.813 222.777L161.187 203.754L147.305 182.486L136.098 163.345L134.745 164.2L128.075 235.42L125.019 239.082L117.887 241.8L111.902 237.31L108.718 229.984L111.902 215.452L115.722 196.547L118.779 181.541L121.58 162.873L123.291 156.636L123.14 156.219L121.773 156.449L107.699 175.752L86.304 204.699L69.3663 222.777L65.291 224.431L58.2867 220.768L58.9235 214.27L62.8713 208.48L86.304 178.705L100.44 160.155L109.551 149.507L109.462 147.967L108.959 147.924L46.6977 188.512L35.6182 189.93L30.7788 185.44L31.4156 178.115L33.7079 175.752L52.4285 162.873Z"/></svg>',
+        cursor: '<svg viewBox="0 0 512 512" aria-hidden="true"><path d="m415.035 156.35-151.503-87.4695c-4.865-2.8094-10.868-2.8094-15.733 0l-151.4969 87.4695c-4.0897 2.362-6.6146 6.729-6.6146 11.459v176.383c0 4.73 2.5249 9.097 6.6146 11.458l151.5039 87.47c4.865 2.809 10.868 2.809 15.733 0l151.504-87.47c4.089-2.361 6.614-6.728 6.614-11.458v-176.383c0-4.73-2.525-9.097-6.614-11.459zm-9.516 18.528-146.255 253.32c-.988 1.707-3.599 1.01-3.599-.967v-165.872c0-3.314-1.771-6.379-4.644-8.044l-143.645-82.932c-1.707-.988-1.01-3.599.968-3.599h292.509c4.154 0 6.75 4.503 4.673 8.101h-.007z"/></svg>',
+        opencode: '<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M320 224V352H192V224H320Z" opacity=".4"/><path fill-rule="evenodd" clip-rule="evenodd" d="M384 416H128V96H384V416ZM320 160H192V352H320V160Z"/></svg>',
+      };
+      return icons[tool] || '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/></svg>';
+    }
+    function trashIcon() {
+      return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5"/></svg>';
+    }
     function filteredResources(kind, tool) {
       const resources = kind === "skill" ? state.data.skills : state.data.mcpServers;
       if (tool === "all") return resources.map(function(item) {
+        const system = kind === "mcp" && state.data.agents.some(function(agent) {
+          return agent.mcpServers.some(function(candidate) { return candidate.name === item.name && candidate.scope === "system"; });
+        });
         const synced = state.data.agents.some(function(agent) {
           const installed = kind === "skill" ? agent.skills : agent.mcpServers;
           return installed.some(function(candidate) { return candidate.name === item.name && (kind !== "skill" || candidate.scope !== "system"); });
         });
-        return Object.assign({}, item, { managed: true, synced: synced });
+        return Object.assign({}, item, { managed: true, synced: synced, scope: system ? "system" : "user" });
       });
       const agent = state.data.agents.find(function(item) { return item.tool === tool; });
       if (!agent) return [];
@@ -415,7 +456,7 @@ export const webAppHtml = String.raw`<!doctype html>
       const installed = kind === "skill" ? agent.skills : agent.mcpServers;
       return installed.map(function(item) {
         const managed = managedByName.get(item.name);
-        if (managed && item.scope !== "system") return Object.assign({}, managed, { managed: true, synced: true });
+        if (managed && item.scope !== "system") return Object.assign({}, managed, { managed: true, synced: true, scope: item.scope || "user" });
         if (kind === "skill") return Object.assign({}, item, { source_type: "agent", updated_at: "", agentLinks: [], managed: false, synced: false });
         return Object.assign({}, item, { managed: false });
       });
@@ -438,7 +479,13 @@ export const webAppHtml = String.raw`<!doctype html>
     }
     function searchControl(kind) {
       const noun = kind === "skill" ? "skills" : "MCP servers";
-      return '<form class="resource-search-form" data-resource-search-form="' + kind + '"><input type="search" class="resource-search" data-resource-search="' + kind + '" name="query" value="' + esc(state[kind + "SearchDraft"]) + '" placeholder="Search ' + noun + '" aria-label="Search ' + noun + '"><button type="submit" class="btn">Search</button></form>';
+      return '<form class="resource-search-form" data-resource-search-form="' + kind + '"><input type="search" class="resource-search" data-resource-search="' + kind + '" name="query" value="' + esc(state[kind + "SearchDraft"]) + '" placeholder="Search ' + noun + '" aria-label="Search ' + noun + '"><button type="submit" class="btn" title="Search ' + noun + '" aria-label="Search ' + noun + '">Search</button></form>';
+    }
+    function scopeSummary(kind, resources) {
+      const system = resources.filter(function(resource) { return resource.scope === "system"; }).length;
+      const user = resources.length - system;
+      const label = kind === "skill" ? "Skill" : "MCP server";
+      return '<div class="scope-summary" aria-label="' + label + ' scope counts"><span class="scope-stat"><span>User</span><strong>' + user + '</strong></span><span class="scope-stat system"><span>System</span><strong>' + system + '</strong></span></div>';
     }
     function filterStrip(kind) {
       const active = state[kind + "Filter"];
@@ -482,7 +529,7 @@ export const webAppHtml = String.raw`<!doctype html>
       }
     }
     function formLoadingMessage(command) {
-      return ({ "Create": "Creating...", "Import": "Importing...", "Apply": "Applying...", "Sync": "Syncing...", "Move": "Moving...", "Remove": "Removing...", "Save server": "Saving server...", "Save changes": "Saving changes..." })[command] || "Working...";
+      return ({ "Add": "Adding...", "Create": "Creating...", "Import": "Importing...", "Apply": "Applying...", "Deploy": "Deploying...", "Move": "Moving...", "Remove": "Removing...", "Save": "Saving..." })[command] || "Working...";
     }
     function toast(message, error) {
       const node = document.createElement("div");
@@ -511,7 +558,6 @@ export const webAppHtml = String.raw`<!doctype html>
       document.getElementById("top-actions").innerHTML = topActions();
       if (state.view === "dashboard") renderDashboard();
       if (state.view === "skills") renderSkills();
-      if (state.view === "presets") renderPresets();
       if (state.view === "mcp") renderMcp();
       view.classList.remove("view-enter");
       void view.offsetWidth;
@@ -519,25 +565,24 @@ export const webAppHtml = String.raw`<!doctype html>
     }
     function topActions() {
       const refresh = '<button class="btn icon" data-action="refresh" aria-label="Refresh" title="Refresh">↻</button>';
-      if (state.view === "skills") return refresh + '<button class="btn primary" data-action="add-skill">Add skill</button>';
-      if (state.view === "mcp") return refresh + '<button class="btn primary" data-action="add-mcp">Add server</button>';
-      if (state.view === "presets") return refresh + '<button class="btn" data-action="create-preset">New preset</button><button class="btn primary" data-action="sync-skills">Apply preset</button>';
-      return refresh + '<button class="btn primary" data-action="backup">Backup</button>';
+      if (state.view === "skills") return refresh + '<button class="btn primary" data-action="add-skill" title="Add a managed skill" aria-label="Add a managed skill">Add</button>';
+      if (state.view === "mcp") return refresh + '<button class="btn primary" data-action="add-mcp" title="Add an MCP server" aria-label="Add an MCP server">Add</button>';
+      return refresh;
     }
     function metrics() {
       const data = state.data;
       const installed = data.status.tools.filter(function(tool) { return tool.installed; }).length;
       return '<div class="metrics">' +
         metric("Managed skills", data.skills.length, data.status.skillsDir) +
-        metric("Presets", data.presets.length, "deployment groups") +
         metric("MCP servers", data.mcpServers.length, "managed definitions") +
         metric("Agents online", installed + "/" + data.status.tools.length, "detected locally") +
       '</div>';
     }
-    function metric(label, value, note) { return '<div class="metric"><div class="metric-label">' + esc(label) + '</div><div class="metric-value">' + esc(value) + '</div><div class="metric-note">' + esc(note) + '</div></div>'; }
+    function metric(label, value, note) { return '<div class="metric"><div class="metric-label">' + esc(label) + '</div><div class="metric-value">' + esc(value) + '</div><div class="metric-note" title="' + esc(note) + '">' + esc(note) + '</div></div>'; }
 
     function renderDashboard() {
       view.innerHTML = metrics() +
+        '<div class="manager-path" aria-label="Manager home: ' + esc(state.data.status.root) + '"><code title="' + esc(state.data.status.root) + '">' + esc(state.data.status.root) + '</code></div>' +
         '<section class="section">' + sectionHead("Agent readiness", state.data.agents.length + " configured destinations", "") + agentTable(state.data.agents) + '</section>';
     }
     function skillTable(skills, actions, filter, query) {
@@ -546,75 +591,74 @@ export const webAppHtml = String.raw`<!doctype html>
         : filter && filter !== "all"
         ? empty("No matching skills", toolLabel(filter) + " has no matching managed skills.")
         : empty("No managed skills", "The skill registry is empty.");
-      const selectable = actions && filter === "all";
       const rows = skills.map(function(skill) {
         const managed = skill.managed !== false;
         const manageable = managed && skill.scope !== "system";
         const agentLink = managed && filter && filter !== "all" && skill.agentLinks.some(function(link) { return link.tool === filter; });
-        const removeAction = !manageable
-          ? ''
-          : filter && filter !== "all"
-          ? (agentLink
-            ? '<button class="btn danger" data-action="delete-skill" data-name="' + esc(skill.name) + '" data-tool="' + esc(filter) + '">Remove</button>'
-            : '<button class="btn danger" disabled title="This Agent skill is not a managed symlink">Remove</button>')
-          : '<button class="btn danger" data-action="delete-skill" data-name="' + esc(skill.name) + '" data-tool="all">Remove</button>';
-        const syncAction = manageable && filter === "all" ? '<button class="btn" data-action="sync-one-skill" data-name="' + esc(skill.name) + '">Sync</button>' : '';
+        const managedDelete = manageable && filter === "all"
+          ? '<span class="managed-delete"><button class="delete-icon" data-action="delete-skill" data-name="' + esc(skill.name) + '" data-tool="all" aria-label="Delete managed skill ' + esc(skill.name) + '" title="Delete managed skill">' + trashIcon() + '</button></span>'
+          : '';
+        const syncAction = manageable && filter === "all" ? '<div class="agent-sync-list">' + state.data.agents.map(function(agent) {
+          const synced = skill.agentLinks.some(function(link) { return link.tool === agent.tool; });
+          const label = (synced ? "Stop syncing " : "Sync ") + skill.name + (synced ? " from " : " to ") + agent.displayName;
+          return '<button class="agent-sync" data-action="toggle-skill-agent" data-name="' + esc(skill.name) + '" data-tool="' + esc(agent.tool) + '" data-synced="' + synced + '" aria-pressed="' + synced + '" aria-label="' + esc(label) + '" title="' + esc(label) + '"><span class="agent-glyph ' + esc(agent.tool) + '">' + toolIcon(agent.tool) + '</span></button>';
+        }).join("") + managedDelete + '</div>' : '<span class="muted">—</span>';
+        const removeAction = filter !== "all"
+          ? '<button class="delete-icon" data-action="delete-skill" data-name="' + esc(skill.name) + '" data-tool="' + esc(filter) + '" aria-label="Remove ' + esc(skill.name) + ' from ' + esc(toolLabel(filter)) + '" title="' + (agentLink ? 'Remove from ' + esc(toolLabel(filter)) : 'This Agent skill is not a managed symlink') + '"' + (manageable && agentLink ? '' : ' disabled') + '>' + trashIcon() + '</button>'
+          : '';
         const name = manageable
           ? '<button class="name-button mono" data-action="edit-skill" data-name="' + esc(skill.name) + '">' + esc(skill.name) + '</button>'
           : '<button class="name-button mono" data-action="view-agent-skill" data-name="' + esc(skill.name) + '" data-tool="' + esc(filter) + '">' + esc(skill.name) + '</button>';
-        return '<tr>' + (selectable ? '<td class="select-cell"><input class="row-check" type="checkbox" data-resource-select="skill" value="' + esc(skill.name) + '" aria-label="Select ' + esc(skill.name) + '"></td>' : '') +
-          '<td>' + name + '</td>' +
-          '<td><span class="tag ' + (skill.scope === 'system' ? 'amber' : 'green') + '">' + esc(skill.scope || "user") + '</span></td><td><div class="truncate">' + esc(skill.description || "No description") + '</div></td>' +
+        return '<tr><td>' + name + '</td>' +
+          (filter !== "all" ? '<td><span class="tag ' + (skill.scope === 'system' ? 'amber' : 'green') + '">' + esc(skill.scope || "user") + '</span></td>' : '') + '<td><div class="truncate">' + esc(skill.description || "No description") + '</div></td>' +
           '<td class="mono muted">' + esc((skill.updated_at || "").replace("T", " ")) + '</td>' +
-          '<td><span class="tag ' + (skill.synced ? 'green' : 'amber') + '">' + (skill.synced ? 'synced' : 'not synced') + '</span></td>' +
-          (actions ? '<td><div class="row-actions">' + syncAction + removeAction + '</div></td>' : '') + '</tr>';
+          (filter === "all" ? '<td>' + syncAction + '</td>' : '') +
+          (actions && filter !== "all" ? '<td><div class="row-actions">' + removeAction + '</div></td>' : '') + '</tr>';
       }).join("");
-      return '<div class="table-wrap"><table><thead><tr>' + (selectable ? '<th class="select-cell"><input class="row-check" type="checkbox" data-resource-select-all="skill" aria-label="Select all skills"></th>' : '') + '<th>Name</th><th>Scope</th><th>Description</th><th>Updated</th><th>Sync</th>' + (actions ? '<th></th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+      return '<div class="table-wrap"><table><thead><tr><th>Name</th>' + (filter !== "all" ? '<th>Scope</th>' : '') + '<th>Description</th><th>Updated</th>' + (filter === "all" ? '<th>Agents</th>' : '') + (actions && filter !== "all" ? '<th aria-label="Actions"></th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
     }
     function renderSkills() {
-      const resources = filteredResources("skill", state.skillFilter);
+      const resources = filteredResources("skill", state.skillFilter).filter(function(skill) { return state.skillFilter !== "all" || skill.scope !== "system"; });
       const skills = searchedResources("skill", resources);
-      const selectedAction = state.skillFilter === "all" ? '<button class="btn primary" data-action="sync-selected-skills" data-sync-selected="skill" disabled>Sync selected</button>' : '';
-      const actions = selectedAction + '<button class="btn" data-action="import-agent-skills">Import from Agent</button>';
-      const controls = '<div class="resource-controls">' + filterStrip("skill") + '<div class="resource-action-row">' + searchControl("skill") + '<div class="toolbar">' + actions + '</div></div></div>';
-      view.innerHTML = metrics() + '<section class="section">' + sectionHead("Skill registry", resourceSummary("skill", resources, skills), "") + controls + skillTable(skills, true, state.skillFilter, state.skillSearch.trim()) + '</section>';
-    }
-    function renderPresets() {
-      const rows = state.data.presets.map(function(preset) {
-        const hasDestination = state.data.presets.some(function(candidate) { return candidate.name !== preset.name; });
-        const canMove = preset.skills.length > 0 && hasDestination;
-        const moveTitle = preset.skills.length === 0 ? "This preset has no skills to move" : "Create another preset before moving a skill";
-        const moveButton = '<button class="btn" data-action="move-skill" data-preset="' + esc(preset.name) + '"' + (canMove ? '' : ' disabled title="' + moveTitle + '"') + '>Move Skills</button>';
-        const removeButton = '<button class="btn danger" data-action="remove-preset-skill" data-preset="' + esc(preset.name) + '"' + (preset.skills.length ? '' : ' disabled title="This preset has no skills to remove"') + '>Remove Skills</button>';
-        const applyButton = '<button class="btn primary" data-action="apply-preset" data-preset="' + esc(preset.name) + '"' + (preset.skills.length ? '' : ' disabled title="Add a skill before applying this preset"') + '>Apply</button>';
-        return '<div class="preset-row"><div><div class="preset-title">' + esc(preset.name) + '</div><div class="preset-count">' + preset.skill_count + ' skills</div></div>' +
-          presetSkillTags(preset.skills) + '<div class="row-actions">' + moveButton + removeButton + applyButton + '</div></div>';
-      }).join("");
-      view.innerHTML = '<section>' + sectionHead("Deployment groups", state.data.presets.length + " skill presets", "") + '<div class="preset-list">' + rows + '</div></section>';
+      const actionRow = state.skillFilter === "all"
+        ? searchControl("skill")
+        : searchControl("skill") + scopeSummary("skill", resources);
+      const controls = '<div class="resource-controls">' + filterStrip("skill") + '<div class="resource-action-row' + (state.skillFilter === "all" ? '' : ' agent-skill-row') + '">' + actionRow + '</div></div>';
+      view.innerHTML = '<section>' + sectionHead("Skill registry", resourceSummary("skill", resources, skills), "") + controls + skillTable(skills, true, state.skillFilter, state.skillSearch.trim()) + '</section>';
     }
     function renderMcp() {
       const resources = filteredResources("mcp", state.mcpFilter);
       const servers = searchedResources("mcp", resources);
-      const selectable = state.mcpFilter === "all";
       const rows = servers.map(function(server) {
         const managed = server.managed !== false;
         const endpoint = server.transport === "http" ? server.url : [server.command].concat(server.args).join(" ");
-        const syncAction = managed && state.mcpFilter === "all" ? '<button class="btn" data-action="sync-one-mcp" data-name="' + esc(server.name) + '"' + (server.enabled ? '' : ' disabled title="Enable this MCP server before syncing"') + '>Sync</button>' : '';
-        const name = managed
+        const system = server.scope === "system";
+        const managedDelete = managed && state.mcpFilter === "all"
+          ? '<span class="managed-delete"><button class="delete-icon" data-action="delete-mcp" data-name="' + esc(server.name) + '" aria-label="Delete managed MCP server ' + esc(server.name) + '" title="' + (system ? 'System MCP servers are read only' : 'Delete managed MCP server') + '"' + (system ? ' disabled' : '') + '>' + trashIcon() + '</button></span>'
+          : '';
+        const syncAction = managed && state.mcpFilter === "all" ? '<div class="agent-sync-list">' + state.data.agents.map(function(agent) {
+          const targeted = server.targetTools.includes("all") || server.targetTools.includes(agent.tool);
+          const synced = agent.mcpServers.some(function(item) { return item.name === server.name; });
+          const available = !system && server.enabled && targeted;
+          const label = system ? "System MCP servers are read only" : !server.enabled ? "Enable " + server.name + " before syncing" : !targeted ? server.name + " is not targeted to " + agent.displayName : (synced ? "Stop syncing " : "Sync ") + server.name + (synced ? " from " : " to ") + agent.displayName;
+          return '<button class="agent-sync" data-action="toggle-mcp-agent" data-name="' + esc(server.name) + '" data-tool="' + esc(agent.tool) + '" data-synced="' + synced + '" aria-pressed="' + synced + '" aria-label="' + esc(label) + '" title="' + esc(label) + '"' + (available ? '' : ' disabled') + '><span class="agent-glyph ' + esc(agent.tool) + '">' + toolIcon(agent.tool) + '</span></button>';
+        }).join("") + managedDelete + '</div>' : '';
+        const name = managed && !system
           ? '<button class="name-button mono" data-action="edit-mcp" data-name="' + esc(server.name) + '">' + esc(server.name) + '</button>'
-          : '<button class="name-button mono" data-action="view-agent-mcp" data-name="' + esc(server.name) + '" data-tool="' + esc(state.mcpFilter) + '">' + esc(server.name) + '</button>';
-        const actions = managed ? syncAction + '<button class="btn danger" data-action="delete-mcp" data-name="' + esc(server.name) + '">Remove</button>' : '<span class="muted mono">read only</span>';
-        return '<tr>' + (selectable ? '<td class="select-cell"><input class="row-check" type="checkbox" data-resource-select="mcp" value="' + esc(server.name) + '"' + (server.enabled ? '' : ' disabled') + ' aria-label="Select ' + esc(server.name) + '"></td>' : '') + '<td>' + name + '</td><td><span class="tag">' + esc(server.transport) + '</span></td><td><div class="command" title="' + esc(endpoint) + '">' + esc(endpoint) + '</div></td><td>' + tags(server.targetTools, "amber") + '</td><td><span class="tag ' + (server.enabled ? 'green' : 'red') + '">' + (server.enabled ? 'enabled' : 'disabled') + '</span></td><td><span class="tag ' + (server.synced ? 'green' : 'amber') + '">' + (server.synced ? 'synced' : 'not synced') + '</span></td><td><div class="row-actions">' + actions + '</div></td></tr>';
+          : state.mcpFilter !== "all"
+          ? '<button class="name-button mono" data-action="view-agent-mcp" data-name="' + esc(server.name) + '" data-tool="' + esc(state.mcpFilter) + '">' + esc(server.name) + '</button>'
+          : '<span class="mono"><strong>' + esc(server.name) + '</strong></span>';
+        const agentDelete = state.mcpFilter !== "all" ? '<button class="delete-icon" data-action="delete-mcp-agent" data-name="' + esc(server.name) + '" data-tool="' + esc(state.mcpFilter) + '" aria-label="Remove ' + esc(server.name) + ' from ' + esc(toolLabel(state.mcpFilter)) + '" title="' + (system ? 'System MCP servers are read only' : 'Remove from ' + esc(toolLabel(state.mcpFilter))) + '"' + (system ? ' disabled' : '') + '>' + trashIcon() + '</button>' : '';
+        return '<tr><td>' + name + '</td>' + (state.mcpFilter !== "all" ? '<td><span class="tag ' + (system ? 'amber' : 'green') + '">' + esc(server.scope || "user") + '</span></td>' : '') + '<td><span class="tag">' + esc(server.transport) + '</span></td><td><div class="command" title="' + esc(endpoint) + '">' + esc(endpoint) + '</div></td><td><span class="tag ' + (server.enabled ? 'green' : 'red') + '">' + (server.enabled ? 'enabled' : 'disabled') + '</span></td>' + (state.mcpFilter === "all" ? '<td>' + syncAction + '</td>' : '<td><div class="row-actions">' + agentDelete + '</div></td>') + '</tr>';
       }).join("");
-      const table = rows ? '<div class="table-wrap"><table><thead><tr>' + (selectable ? '<th class="select-cell"><input class="row-check" type="checkbox" data-resource-select-all="mcp" aria-label="Select all enabled MCP servers"></th>' : '') + '<th>Name</th><th>Transport</th><th>Endpoint</th><th>Targets</th><th>Status</th><th>Sync</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : state.mcpSearch.trim()
+      const table = rows ? '<div class="table-wrap"><table><thead><tr><th>Name</th>' + (state.mcpFilter !== "all" ? '<th>Scope</th>' : '') + '<th>Transport</th><th>Endpoint</th><th>Status</th><th>' + (state.mcpFilter === "all" ? 'Agents' : '<span class="sr-only">Actions</span>') + '</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : state.mcpSearch.trim()
         ? empty("No matching MCP servers", "No managed MCP servers match your search.")
         : state.mcpFilter === "all"
         ? empty("No MCP servers", "The MCP registry is empty.")
         : empty("No matching MCP servers", toolLabel(state.mcpFilter) + " has no matching managed MCP servers.");
-      const selectedAction = state.mcpFilter === "all" ? '<button class="btn primary" data-action="sync-selected-mcp" data-sync-selected="mcp" disabled>Sync selected</button>' : '';
-      const actions = selectedAction + '<button class="btn" data-action="import-agent-mcp">Import from Agent</button>';
-      const controls = '<div class="resource-controls">' + filterStrip("mcp") + '<div class="resource-action-row">' + searchControl("mcp") + '<div class="toolbar">' + actions + '</div></div></div>';
-      view.innerHTML = '<section>' + sectionHead("Server registry", resourceSummary("mcp", resources, servers), "") + controls + table + '</section>';
+      const actionRow = state.mcpFilter === "all" ? searchControl("mcp") : searchControl("mcp") + scopeSummary("mcp", resources);
+      const controls = '<div class="resource-controls">' + filterStrip("mcp") + '<div class="resource-action-row' + (state.mcpFilter === "all" ? '' : ' agent-skill-row') + '">' + actionRow + '</div></div>';
+      view.innerHTML = '<section>' + sectionHead("MCP registry", resourceSummary("mcp", resources, servers), "") + controls + table + '</section>';
     }
     function agentTable(agents) {
       const tools = state.data.status.tools;
@@ -623,7 +667,7 @@ export const webAppHtml = String.raw`<!doctype html>
       const rows = agents.map(function(agent) {
         const installed = tools.find(function(tool) { return tool.key === agent.tool; });
         const syncedSkills = agent.skills.filter(function(skill) { return skill.scope !== "system" && syncedSkillNames.has(skill.name); }).length;
-        const syncedMcp = agent.mcpServers.filter(function(server) { return syncedMcpNames.has(server.name); }).length;
+        const syncedMcp = agent.mcpServers.filter(function(server) { return server.scope !== "system" && syncedMcpNames.has(server.name); }).length;
         const skillPaths = (agent.skillsPaths && agent.skillsPaths.length ? agent.skillsPaths : [agent.skillsPath]).map(function(path) {
           return '<div class="agent-path" title="' + esc(path) + '">' + esc(path) + '</div>';
         }).join("");
@@ -635,10 +679,13 @@ export const webAppHtml = String.raw`<!doctype html>
     }
 
     function openForm(title, body, submit, handler, danger) {
+      document.getElementById("form-dialog").classList.remove("mcp-add-dialog");
       document.getElementById("form-title").textContent = title;
       document.getElementById("form-body").innerHTML = body;
       const submitButton = document.getElementById("form-submit");
       submitButton.textContent = submit;
+      submitButton.title = title;
+      submitButton.setAttribute("aria-label", title);
       submitButton.className = "btn " + (danger ? "danger" : "primary");
       state.formHandler = handler;
       document.getElementById("form-dialog").showModal();
@@ -648,12 +695,6 @@ export const webAppHtml = String.raw`<!doctype html>
     }
     function field(label, name, value, placeholder, type) {
       return '<div class="field"><label for="field-' + name + '">' + esc(label) + '</label><input id="field-' + name + '" name="' + name + '" type="' + (type || 'text') + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '" required></div>';
-    }
-    function multiCheckField(label, name, values) {
-      const checks = values.map(function(value) {
-        return '<label class="check"><input type="checkbox" name="' + esc(name) + '" value="' + esc(value) + '"><span>' + esc(value) + '</span></label>';
-      }).join("");
-      return '<div class="field"><span class="field-label">' + esc(label) + '</span><div class="check-grid batch-check-grid">' + checks + '</div></div>';
     }
     function textareaField(label, name, value, placeholder, className) {
       return '<div class="field"><label for="field-' + name + '">' + esc(label) + '</label><textarea id="field-' + name + '" name="' + name + '" class="' + esc(className || '') + '" placeholder="' + esc(placeholder || '') + '">' + esc(value || '') + '</textarea></div>';
@@ -682,7 +723,25 @@ export const webAppHtml = String.raw`<!doctype html>
       shell.classList.toggle("open", opening);
       trigger.setAttribute("aria-expanded", String(opening));
       menu.hidden = !opening;
-      if (opening) requestAnimationFrame(function() { (menu.querySelector('[aria-selected="true"]') || menu.querySelector("[data-select-option]"))?.focus(); });
+      if (opening) requestAnimationFrame(function() {
+        positionSelectMenu(trigger, menu);
+        const activeOption = menu.querySelector('[aria-selected="true"]') || menu.querySelector("[data-select-option]");
+        if (activeOption) activeOption.focus({ preventScroll: true });
+      });
+    }
+    function positionSelectMenu(trigger, menu) {
+      const rect = trigger.getBoundingClientRect();
+      const gap = 6;
+      const viewportHeight = window.innerHeight;
+      const roomBelow = viewportHeight - rect.bottom - gap;
+      const roomAbove = rect.top - gap;
+      const preferredHeight = Math.min(224, menu.scrollHeight || 224);
+      const openAbove = roomBelow < Math.min(160, preferredHeight) && roomAbove > roomBelow;
+      const available = Math.max(96, openAbove ? roomAbove : roomBelow);
+      menu.style.left = Math.max(8, rect.left) + "px";
+      menu.style.width = Math.min(rect.width, window.innerWidth - 16) + "px";
+      menu.style.maxHeight = Math.min(224, available) + "px";
+      menu.style.top = openAbove ? Math.max(8, rect.top - Math.min(preferredHeight, available) - gap) + "px" : rect.bottom + gap + "px";
     }
     function chooseSelectOption(option) {
       const shell = option.closest(".select-shell");
@@ -695,83 +754,103 @@ export const webAppHtml = String.raw`<!doctype html>
       trigger.focus();
     }
     function openAddSkill() {
-      const body = field("Local path or Git source", "source", "", "./my-skill or git@host:group/repo.git#main:path") +
-        selectField("Preset", "preset", presetOptions("Default"));
-      openForm("Add managed skill", body, "Import", async function(form) {
-        const payload = await api("/api/skills/import", { method: "POST", body: JSON.stringify({ source: form.get("source"), preset: form.get("preset") }) });
+      const method = '<div class="field"><span class="field-label">Source</span><div class="mode-switch" role="group" aria-label="Skill source"><input type="hidden" name="skillAddMode" value="remote"><button type="button" data-skill-add-mode-option="local" aria-pressed="false">Local</button><button type="button" data-skill-add-mode-option="remote" aria-pressed="true">Remote</button></div></div>';
+      const body = method +
+        '<div data-skill-add-mode="local" hidden><div class="field"><span class="field-label">Agents</span><div class="target-tool-grid">' + toolIconChecks("skillAgents", ["all"]) + '</div></div></div>' +
+        '<div data-skill-add-mode="remote">' + field("Git source", "source", "", "git@host:group/repo.git#main:path") + '</div>';
+      openForm("Add managed skill", body, "Add", async function(form, element) {
+        if (form.get("skillAddMode") === "local") {
+          const agents = Array.from(element.querySelectorAll('input[name="skillAgents"]:checked')).map(function(input) { return input.value; });
+          if (!agents.length) throw new Error("Select at least one Agent.");
+          let count = 0;
+          for (const tool of agents) {
+            const payload = await api("/api/skills/import-agent", { method: "POST", body: JSON.stringify({ tool: tool }) });
+            count += payload.results.reduce(function(total, result) { return total + result.skills.length; }, 0);
+          }
+          return "Imported " + count + " skill" + (count === 1 ? "" : "s") + ".";
+        }
+        const payload = await api("/api/skills/import", { method: "POST", body: JSON.stringify({ source: form.get("source") }) });
         return "Imported " + payload.skills.length + " skill" + (payload.skills.length === 1 ? "" : "s") + ".";
       });
+      updateSkillAddMode(document.getElementById("dynamic-form"));
     }
-    function openCreatePreset() {
-      openForm("New skill preset", field("Name", "name", "", "Work"), "Create", async function(form) {
-        const payload = await api("/api/presets", { method: "POST", body: JSON.stringify({ name: form.get("name") }) });
-        return "Created preset " + payload.preset.name + ".";
+    function refreshAgentFilterCounts(kind) {
+      document.querySelectorAll('[data-filter-scope="' + kind + '"]').forEach(function(filterButton) {
+        const count = filterButton.querySelector(".filter-count");
+        if (count) count.textContent = String(filteredResources(kind, filterButton.dataset.filterValue).length);
       });
     }
-    function openImport(kind) {
-      const noun = kind === "skills" ? "skills" : "MCP servers";
-      const body = selectField("Agent", "tool", toolOptions("all")) +
-        (kind === "skills" ? selectField("Preset", "preset", presetOptions("Default")) : "");
-      openForm("Import " + noun + " from Agent", body, "Import", async function(form) {
-        const path = kind === "skills" ? "/api/skills/import-agent" : "/api/mcp/import";
-        await api(path, { method: "POST", body: JSON.stringify({ tool: form.get("tool"), ...(kind === "skills" ? { preset: form.get("preset") } : {}) }) });
-        return "Imported " + noun + ".";
-      });
+    function updateAgentSyncButton(button, kind) {
+      const name = button.dataset.name;
+      const tool = button.dataset.tool;
+      const agent = state.data.agents.find(function(item) { return item.tool === tool; });
+      let synced = false;
+      let available = false;
+      let label = "";
+      if (kind === "skill") {
+        const skill = state.data.skills.find(function(item) { return item.name === name; });
+        synced = Boolean(skill && skill.agentLinks.some(function(link) { return link.tool === tool; }));
+        available = true;
+        label = (synced ? "Stop syncing " : "Sync ") + name + (synced ? " from " : " to ") + toolLabel(tool);
+      } else {
+        const server = state.data.mcpServers.find(function(item) { return item.name === name; });
+        synced = Boolean(agent && agent.mcpServers.some(function(item) { return item.name === name; }));
+        const targeted = Boolean(server && (server.targetTools.includes("all") || server.targetTools.includes(tool)));
+        available = Boolean(server && server.enabled && targeted);
+        label = server && !server.enabled ? "Enable " + name + " before syncing" : !targeted ? name + " is not targeted to " + toolLabel(tool) : (synced ? "Stop syncing " : "Sync ") + name + (synced ? " from " : " to ") + toolLabel(tool);
+      }
+      button.dataset.synced = String(synced);
+      button.setAttribute("aria-pressed", String(synced));
+      button.setAttribute("aria-label", label);
+      button.title = label;
+      button.disabled = !available;
+      button.classList.remove("loading");
+      button.removeAttribute("aria-busy");
     }
-    function openSyncSkills(preset, fixedPreset) {
-      const presetName = preset || "Default";
-      const body = (fixedPreset ? "" : selectField("Preset", "preset", presetOptions(presetName))) +
-        selectField("Agent", "tool", toolOptions("all")) +
-        selectField("Sync mode", "mode", [
-          { value: "", label: "Configured default", selected: true },
-          { value: "symlink", label: "symlink" },
-          { value: "copy", label: "copy" },
-        ]);
-      openForm(fixedPreset ? "Apply " + presetName : "Apply skill preset", body, "Apply", async function(form) {
-        const selectedPreset = fixedPreset ? presetName : form.get("preset");
-        const payload = await api("/api/presets/apply", { method: "POST", body: JSON.stringify({ preset: selectedPreset, tool: form.get("tool"), mode: form.get("mode") }) });
-        return "Applied " + payload.results.length + " skill targets.";
-      });
+    async function refreshAgentSyncState(button, kind) {
+      state.data = await api("/api/snapshot");
+      updateAgentSyncButton(button, kind);
+      refreshAgentFilterCounts(kind);
     }
-    function openSyncSkill(names) {
-      const body = selectField("Agent", "tool", toolOptions("all")) +
-        selectField("Sync mode", "mode", [
-          { value: "", label: "Configured default", selected: true },
-          { value: "symlink", label: "symlink" },
-          { value: "copy", label: "copy" },
-        ]);
-      const title = names.length === 1 ? "Sync " + names[0] : "Sync " + names.length + " skills";
-      openForm(title, body, "Sync", async function(form) {
-        const payload = await api("/api/skills/sync-selected", { method: "POST", body: JSON.stringify({ names: names, tool: form.get("tool"), mode: form.get("mode") }) });
-        return "Synced " + names.length + " skill" + (names.length === 1 ? "" : "s") + " across " + payload.results.length + " Agent targets.";
-      });
+    async function toggleSkillAgent(name, tool, synced, button) {
+      button.disabled = true;
+      button.classList.add("loading");
+      button.setAttribute("aria-busy", "true");
+      try {
+        if (synced) {
+          await api("/api/skills/" + encodeURIComponent(name) + "?tool=" + encodeURIComponent(tool), { method: "DELETE" });
+          toast("Stopped syncing " + name + " to " + toolLabel(tool) + ".");
+        } else {
+          await api("/api/skills/sync-selected", { method: "POST", body: JSON.stringify({ names: [name], tool: tool }) });
+          toast("Synced " + name + " to " + toolLabel(tool) + ".");
+        }
+        await refreshAgentSyncState(button, "skill");
+      } catch (error) {
+        toast(error.message, true);
+        updateAgentSyncButton(button, "skill");
+      }
     }
-    function openMoveSkill(preset) {
-      const selectedPreset = state.data.presets.find(function(item) { return item.name === preset; });
-      const skillNames = selectedPreset ? selectedPreset.skills : [];
-      const destinationOpts = state.data.presets.filter(function(item) { return item.name !== preset; }).map(function(item, index) { return { value: item.name, label: item.name, selected: index === 0 }; });
-      const body = multiCheckField("Skills", "skills", skillNames) + selectField("Destination preset", "to", destinationOpts);
-      openForm("Move Skills", body, "Move", async function(form) {
-        const names = form.getAll("skills").map(String);
-        if (!names.length) throw new Error("Select at least one skill.");
-        const payload = await api("/api/presets/move-skill", { method: "POST", body: JSON.stringify({ names: names, from: preset, to: form.get("to") }) });
-        return "Moved " + payload.count + " skill" + (payload.count === 1 ? "" : "s") + " to " + form.get("to") + ".";
-      });
-    }
-    function openRemovePresetSkill(preset) {
-      const selectedPreset = state.data.presets.find(function(item) { return item.name === preset; });
-      const skillNames = selectedPreset ? selectedPreset.skills : [];
-      openForm("Remove Skills from " + preset, multiCheckField("Skills", "skills", skillNames), "Remove", async function(form) {
-        const names = form.getAll("skills").map(String);
-        if (!names.length) throw new Error("Select at least one skill.");
-        const payload = await api("/api/presets/remove-skill", { method: "POST", body: JSON.stringify({ names: names, preset: preset }) });
-        return "Removed " + payload.count + " skill" + (payload.count === 1 ? "" : "s") + " from " + preset + ".";
-      }, true);
+    async function toggleMcpAgent(name, tool, synced, button) {
+      button.disabled = true;
+      button.classList.add("loading");
+      button.setAttribute("aria-busy", "true");
+      try {
+        if (synced) {
+          await api("/api/mcp/" + encodeURIComponent(name) + "?tool=" + encodeURIComponent(tool), { method: "DELETE" });
+          toast("Stopped syncing " + name + " to " + toolLabel(tool) + ".");
+        } else {
+          await api("/api/mcp/sync-selected", { method: "POST", body: JSON.stringify({ names: [name], tool: tool }) });
+          toast("Synced " + name + " to " + toolLabel(tool) + ".");
+        }
+        if (button.dataset.action === "delete-mcp-agent") await load();
+        else await refreshAgentSyncState(button, "mcp");
+      } catch (error) {
+        toast(error.message, true);
+        updateAgentSyncButton(button, "mcp");
+      }
     }
     function mcpFormBody(server) {
-      const checks = TOOLS.map(function(tool) {
-        return '<label class="check"><input type="checkbox" name="targets" value="' + tool + '"' + (server.targetTools.includes(tool) ? ' checked' : '') + '><span>' + esc(toolLabel(tool)) + '</span></label>';
-      }).join("");
+      const checks = toolIconChecks("targets", server.targetTools);
       const env = Object.entries(server.env || {}).map(function(entry) { return entry[0] + "=" + entry[1]; }).join("\n");
       const headers = Object.entries(server.headers || {}).map(function(entry) { return entry[0] + "=" + entry[1]; }).join("\n");
       return field("Name", "name", server.name, "playwright") +
@@ -784,8 +863,14 @@ export const webAppHtml = String.raw`<!doctype html>
         textareaField("Environment", "env", env, "KEY=value, one per line") + '</div>' +
         '<div data-mcp-transport="http">' + field("URL", "url", server.url, "https://example.com/mcp", "url") +
         textareaField("HTTP headers", "headers", headers, "Authorization=Bearer ..., one per line") + '</div>' +
-        '<div class="field"><span class="field-label">Target tools</span><div class="check-grid">' + checks + '</div></div>' +
+        '<div class="field"><span class="field-label">Target tools</span><div class="target-tool-grid">' + checks + '</div></div>' +
         '<div class="field"><span class="field-label">Status</span><label class="check"><input type="checkbox" name="enabled"' + (server.enabled ? ' checked' : '') + '><span>Enabled</span></label></div>';
+    }
+    function toolIconChecks(name, selectedTools) {
+      return TOOLS.map(function(tool) {
+        const label = toolLabel(tool);
+        return '<label class="target-tool-check" title="' + esc(label) + '"><input type="checkbox" data-tool-multi name="' + esc(name) + '" value="' + tool + '" aria-label="' + esc(label) + '"' + (selectedTools.includes(tool) ? ' checked' : '') + '><span class="target-tool-icon">' + toolIcon(tool) + '</span></label>';
+      }).join("");
     }
     function mcpFormPayload(form, element) {
       function keyValues(name, label) {
@@ -814,20 +899,50 @@ export const webAppHtml = String.raw`<!doctype html>
         section.querySelectorAll("input, textarea").forEach(function(input) { input.disabled = !active; });
       });
     }
+    function updateMcpAddMode(form) {
+      if (!form) return;
+      const mode = form.querySelector('input[name="mcpAddMode"]')?.value || "manual";
+      form.querySelectorAll("[data-mcp-add-mode-option]").forEach(function(button) { button.setAttribute("aria-pressed", String(button.dataset.mcpAddModeOption === mode)); });
+      form.querySelectorAll("[data-mcp-add-mode]").forEach(function(section) {
+        const active = section.dataset.mcpAddMode === mode;
+        section.hidden = !active;
+        section.querySelectorAll("input, textarea, button").forEach(function(input) { input.disabled = !active; });
+      });
+      if (mode === "manual") updateMcpTransport(form);
+    }
+    function updateSkillAddMode(form) {
+      if (!form) return;
+      const mode = form.querySelector('input[name="skillAddMode"]')?.value || "remote";
+      form.querySelectorAll("[data-skill-add-mode-option]").forEach(function(button) { button.setAttribute("aria-pressed", String(button.dataset.skillAddModeOption === mode)); });
+      form.querySelectorAll("[data-skill-add-mode]").forEach(function(section) {
+        const active = section.dataset.skillAddMode === mode;
+        section.hidden = !active;
+        section.querySelectorAll("input, textarea, button").forEach(function(input) { input.disabled = !active; });
+      });
+    }
     function openAddMcp() {
       const server = { name: "", transport: "stdio", command: "", url: "", args: [], env: {}, headers: {}, targetTools: ["all"], enabled: true };
-      openForm("Add MCP server", mcpFormBody(server), "Save server", async function(form, element) {
+      const method = '<div class="field"><span class="field-label">Method</span><div class="mode-switch" role="group" aria-label="MCP add method"><input type="hidden" name="mcpAddMode" value="manual"><button type="button" data-mcp-add-mode-option="manual" aria-pressed="true">Manual</button><button type="button" data-mcp-add-mode-option="import" aria-pressed="false">Import</button></div></div>';
+      const body = method + '<div data-mcp-add-mode="manual">' + mcpFormBody(server) + '</div>' +
+        '<div data-mcp-add-mode="import" hidden>' + selectField("Agent", "importTool", toolOptions("all")) + '</div>';
+      openForm("Add MCP server", body, "Add", async function(form, element) {
+        if (form.get("mcpAddMode") === "import") {
+          const payload = await api("/api/mcp/import", { method: "POST", body: JSON.stringify({ tool: form.get("importTool") }) });
+          const count = payload.results.reduce(function(total, result) { return total + result.count; }, 0);
+          return "Imported " + count + " MCP server" + (count === 1 ? "" : "s") + ".";
+        }
         const payload = mcpFormPayload(form, element);
         await api("/api/mcp", { method: "POST", body: JSON.stringify(payload) });
         return "Saved MCP server " + form.get("name") + ".";
       });
-      updateMcpTransport(document.getElementById("dynamic-form"));
+      document.getElementById("form-dialog").classList.add("mcp-add-dialog");
+      updateMcpAddMode(document.getElementById("dynamic-form"));
     }
     async function openEditMcp(name, button) {
       setButtonLoading(button, true, "Loading...");
       try {
         const payload = await api("/api/mcp/" + encodeURIComponent(name));
-        openForm("Edit MCP server", mcpFormBody(payload.server), "Save changes", async function(form, element) {
+        openForm("Edit MCP server", mcpFormBody(payload.server), "Save", async function(form, element) {
           const updated = mcpFormPayload(form, element);
           await api("/api/mcp/" + encodeURIComponent(name), { method: "PUT", body: JSON.stringify(updated) });
           return "Updated MCP server " + updated.name + ".";
@@ -835,33 +950,6 @@ export const webAppHtml = String.raw`<!doctype html>
         updateMcpTransport(document.getElementById("dynamic-form"));
       } catch (error) { toast(error.message, true); }
       finally { setButtonLoading(button, false); }
-    }
-    function openSyncMcpServer(names) {
-      const servers = state.data.mcpServers.filter(function(item) { return names.includes(item.name); });
-      const eligible = TOOLS.slice(1).filter(function(tool) { return servers.every(function(server) { return server.targetTools.includes("all") || server.targetTools.includes(tool); }); });
-      const options = [{ value: "all", label: "All targeted Agents", selected: true }].concat(eligible.map(function(tool) { return { value: tool, label: toolLabel(tool) }; }));
-      const title = names.length === 1 ? "Sync " + names[0] : "Sync " + names.length + " MCP servers";
-      openForm(title, selectField("Agent", "tool", options), "Sync", async function(form) {
-        const payload = await api("/api/mcp/sync-selected", { method: "POST", body: JSON.stringify({ names: names, tool: form.get("tool") }) });
-        return "Synced " + names.length + " MCP server" + (names.length === 1 ? "" : "s") + " across " + payload.results.length + " Agent targets.";
-      });
-    }
-    function selectedResourceNames(kind) {
-      return [...document.querySelectorAll('[data-resource-select="' + kind + '"]:checked')].map(function(input) { return input.value; });
-    }
-    function updateResourceSelection(kind) {
-      const options = [...document.querySelectorAll('[data-resource-select="' + kind + '"]:not([disabled])')];
-      const checked = options.filter(function(option) { return option.checked; });
-      const all = document.querySelector('[data-resource-select-all="' + kind + '"]');
-      if (all) {
-        all.checked = options.length > 0 && checked.length === options.length;
-        all.indeterminate = checked.length > 0 && checked.length < options.length;
-      }
-      const button = document.querySelector('[data-sync-selected="' + kind + '"]');
-      if (button) {
-        button.disabled = checked.length === 0;
-        button.textContent = checked.length ? "Sync selected (" + checked.length + ")" : "Sync selected";
-      }
     }
     async function openEditSkill(name, button) {
       setButtonLoading(button, true, "Loading...");
@@ -871,7 +959,7 @@ export const webAppHtml = String.raw`<!doctype html>
         const links = payload.agentLinks.length ? payload.agentLinks.map(function(link) { return esc(link.tool + ': ' + link.path); }).join('<br>') : 'none';
         const body = '<dl class="detail-meta"><dt>Scope</dt><dd><span class="tag green">user</span></dd><dt>Source</dt><dd>' + esc(skill.source_type) + '</dd><dt>Path</dt><dd class="mono">' + esc(skill.path) + '</dd><dt>Agent links</dt><dd>' + links + '</dd></dl>' +
           textareaField("SKILL.md", "markdown", payload.markdown, "", "source-editor");
-        openForm("Edit " + skill.name, body, "Save changes", async function(form) {
+        openForm("Edit " + skill.name, body, "Save", async function(form) {
           await api("/api/skills/" + encodeURIComponent(name), { method: "PUT", body: JSON.stringify({ markdown: form.get("markdown") }) });
           return "Updated skill " + name + ".";
         });
@@ -1021,48 +1109,48 @@ export const webAppHtml = String.raw`<!doctype html>
         if (state.confirmResolve) state.confirmResolve(confirmed ? target : null);
         state.confirmResolve = null; return;
       }
+      if (target.dataset.mcpAddModeOption) {
+        const form = target.closest("form");
+        form.querySelector('input[name="mcpAddMode"]').value = target.dataset.mcpAddModeOption;
+        updateMcpAddMode(form);
+        return;
+      }
+      if (target.dataset.skillAddModeOption) {
+        const form = target.closest("form");
+        form.querySelector('input[name="skillAddMode"]').value = target.dataset.skillAddModeOption;
+        updateSkillAddMode(form);
+        return;
+      }
       const action = target.dataset.action;
       if (action === "refresh") await load(target);
       if (action === "add-skill") openAddSkill();
-      if (action === "create-preset") openCreatePreset();
-      if (action === "import-agent-skills") openImport("skills");
-      if (action === "sync-skills") openSyncSkills();
-      if (action === "sync-one-skill") openSyncSkill([target.dataset.name]);
-      if (action === "sync-selected-skills") openSyncSkill(selectedResourceNames("skill"));
-      if (action === "apply-preset") openSyncSkills(target.dataset.preset, true);
-      if (action === "move-skill") openMoveSkill(target.dataset.preset);
-      if (action === "remove-preset-skill") openRemovePresetSkill(target.dataset.preset);
+      if (action === "toggle-skill-agent") await toggleSkillAgent(target.dataset.name, target.dataset.tool, target.dataset.synced === "true", target);
       if (action === "edit-skill") await openEditSkill(target.dataset.name, target);
       if (action === "view-agent-skill") await openAgentSkill(target.dataset.tool, target.dataset.name, target);
       if (action === "delete-skill") await removeSkillAction(target.dataset.name, target.dataset.tool, target);
       if (action === "add-mcp") openAddMcp();
       if (action === "edit-mcp") await openEditMcp(target.dataset.name, target);
       if (action === "view-agent-mcp") openAgentMcp(target.dataset.tool, target.dataset.name);
-      if (action === "import-agent-mcp") openImport("mcp");
-      if (action === "sync-one-mcp") openSyncMcpServer([target.dataset.name]);
-      if (action === "sync-selected-mcp") openSyncMcpServer(selectedResourceNames("mcp"));
+      if (action === "toggle-mcp-agent") await toggleMcpAgent(target.dataset.name, target.dataset.tool, target.dataset.synced === "true", target);
+      if (action === "delete-mcp-agent") await toggleMcpAgent(target.dataset.name, target.dataset.tool, true, target);
       if (action === "delete-mcp") await removeMcpAction(target.dataset.name);
       if (action === "backup") await mutate(function() { return api("/api/backup", { method: "POST", body: "{}" }); }, "Skills backup completed.", "Backing up...", target);
     });
     document.addEventListener("change", function(event) {
       const input = event.target;
-      if (input.matches('input[name="targets"]')) {
+      if (input.matches('input[data-tool-multi]')) {
         const form = input.closest("form");
+        const selector = 'input[name="' + input.name + '"]';
         if (input.value === "all" && input.checked) {
-          form.querySelectorAll('input[name="targets"]:not([value="all"])').forEach(function(option) { option.checked = false; });
+          form.querySelectorAll(selector + ':not([value="all"])').forEach(function(option) { option.checked = false; });
         } else if (input.checked) {
-          const all = form.querySelector('input[name="targets"][value="all"]');
+          const all = form.querySelector(selector + '[value="all"]');
           if (all) all.checked = false;
         }
-        return;
       }
-      const kind = input.dataset.resourceSelectAll || input.dataset.resourceSelect;
-      if (!kind) return;
-      if (input.dataset.resourceSelectAll) {
-        document.querySelectorAll('[data-resource-select="' + kind + '"]:not([disabled])').forEach(function(option) { option.checked = input.checked; });
-      }
-      updateResourceSelection(kind);
     });
+    window.addEventListener("resize", closeSelectMenus);
+    document.addEventListener("scroll", closeSelectMenus, true);
     document.addEventListener("input", function(event) {
       const input = event.target;
       const kind = input.dataset.resourceSearch;

@@ -14,6 +14,8 @@ export type ToolAdapter = {
   projectSkillsDir: string;
   mcpKind: "codex-toml" | "claude-json" | "cursor-json" | "opencode-json";
   mcpPath: string;
+  installCommands?: string[];
+  installPaths?: string[];
 };
 
 export const toolAdapters: ToolAdapter[] = [
@@ -27,6 +29,8 @@ export const toolAdapters: ToolAdapter[] = [
     projectSkillsDir: ".codex/skills",
     mcpKind: "codex-toml",
     mcpPath: join(homedir(), ".codex", "config.toml"),
+    installCommands: ["codex"],
+    installPaths: ["/Applications/Codex.app"],
   },
   {
     key: "claude_code",
@@ -37,6 +41,7 @@ export const toolAdapters: ToolAdapter[] = [
     projectSkillsDir: ".claude/skills",
     mcpKind: "claude-json",
     mcpPath: join(homedir(), ".claude", "mcp.json"),
+    installCommands: ["claude"],
   },
   {
     key: "cursor",
@@ -46,6 +51,8 @@ export const toolAdapters: ToolAdapter[] = [
     projectSkillsDir: ".cursor/skills",
     mcpKind: "cursor-json",
     mcpPath: join(homedir(), ".cursor", "mcp.json"),
+    installCommands: ["cursor"],
+    installPaths: ["/Applications/Cursor.app"],
   },
   {
     key: "opencode",
@@ -55,6 +62,8 @@ export const toolAdapters: ToolAdapter[] = [
     projectSkillsDir: ".opencode/skills",
     mcpKind: "opencode-json",
     mcpPath: join(homedir(), ".config", "opencode", "opencode.json"),
+    installCommands: ["opencode"],
+    installPaths: ["/Applications/OpenCode.app"],
   },
 ];
 
@@ -81,5 +90,15 @@ export function resolveTools(input?: string): ToolAdapter[] {
 }
 
 export async function detectTools(): Promise<Array<ToolAdapter & { installed: boolean }>> {
-  return Promise.all(toolAdapters.map(async (tool) => ({ ...tool, installed: await pathExists(tool.detectPath) })));
+  return Promise.all(toolAdapters.map(async (tool) => ({ ...tool, installed: await isToolInstalled(tool) })));
+}
+
+export async function isToolInstalled(tool: ToolAdapter): Promise<boolean> {
+  const commands = tool.installCommands || [];
+  const installPaths = tool.installPaths || [];
+  if (commands.length || installPaths.length) {
+    if (commands.some((command) => Bun.which(command) !== null)) return true;
+    return (await Promise.all(installPaths.map(pathExists))).some(Boolean);
+  }
+  return pathExists(tool.detectPath);
 }

@@ -1,8 +1,7 @@
 #!/usr/bin/env bun
 import { initManager } from "./core/init";
 import { status } from "./core/status";
-import { addAllLocalAgentSkills, addCodexSkills, addLocalAgentSkills, addSkill, addSkills, findSkillAgentLinks, getSkill, listAgentSkills, listSkills, removeSkill, removeSkillAgentLink, skillMarkdownSummary } from "./core/skill";
-import { listPresets, createPreset, applyPreset, movePreset, moveSkillPreset, moveSkillsPreset, removeSkillFromPreset, removeSkillsFromPreset, syncSkill, type SyncMode } from "./core/preset";
+import { addAllLocalAgentSkills, addCodexSkills, addLocalAgentSkills, addSkill, addSkills, findSkillAgentLinks, getSkill, listAgentSkills, listSkills, removeSkill, removeSkillAgentLink, skillMarkdownSummary, syncSkill, type SyncMode } from "./core/skill";
 import { addMcpServer, getMcpServer, importMcpFromTools, listMcpServers, listToolMcpServers, removeMcpServer, syncMcp, syncMcpServer, type McpServer } from "./core/mcp";
 import { listAgentOverview } from "./core/agent";
 import { backup } from "./core/backup";
@@ -20,7 +19,7 @@ type MenuCommand = {
   label: string;
   description: string;
   argv: string[];
-  group: "System" | "Agents" | "Skills" | "Skill Presets" | "MCP";
+  group: "System" | "Agents" | "Skills" | "MCP";
 };
 
 async function main(): Promise<void> {
@@ -49,9 +48,6 @@ async function main(): Promise<void> {
     case "skills":
       await cmdSkills(argv, global);
       break;
-    case "presets":
-      await cmdPresets(argv, global);
-      break;
     case "mcp":
       await cmdMcp(argv, global);
       break;
@@ -78,19 +74,13 @@ const menuCommands: MenuCommand[] = [
   { group: "System", label: "Status", description: "Paths, counts, and detected agents.", argv: ["status"] },
   { group: "System", label: "Open web dashboard", description: "Manage tools in a local browser.", argv: ["web"] },
   { group: "Agents", label: "List agent-side contents", description: "Show skills and MCP currently in agents.", argv: ["agents", "list", "--tool", "$tool?"] },
-  { group: "Skills", label: "Add skill from source", description: "Import a local path or Git URL.", argv: ["skills", "add", "$source", "--preset", "$preset?"] },
-  { group: "Skills", label: "Import skills from agent", description: "Copy agent-side skills into tm.", argv: ["skills", "add", "--tool", "$tool?", "--preset", "$preset?"] },
+  { group: "Skills", label: "Add skill from source", description: "Import a local path or Git URL.", argv: ["skills", "add", "$source"] },
+  { group: "Skills", label: "Import skills from agent", description: "Copy agent-side skills into tm.", argv: ["skills", "add", "--tool", "$tool?"] },
   { group: "Skills", label: "List managed skills", description: "Browse skills stored in tm.", argv: ["skills", "list"] },
   { group: "Skills", label: "Show managed skill", description: "Inspect one tm skill document.", argv: ["skills", "show", "$skill"] },
   { group: "Skills", label: "Remove skill", description: "Delete managed source and agent symlinks.", argv: ["skills", "remove", "$skill"] },
   { group: "Skills", label: "Unlink skill from agent", description: "Remove one managed Agent symlink only.", argv: ["skills", "unlink", "$skill", "--tool", "$agent?"] },
   { group: "Skills", label: "Sync selected skills", description: "Choose one or more skills for an agent.", argv: ["skills", "sync-selected", "$skills", "--tool", "$tool?", "--mode", "$mode?"] },
-  { group: "Skill Presets", label: "List skill presets", description: "Show skill groups.", argv: ["presets", "list"] },
-  { group: "Skill Presets", label: "Create skill preset", description: "Create an empty skill group.", argv: ["presets", "create", "$new_preset"] },
-  { group: "Skill Presets", label: "Apply skill preset", description: "Apply one skill group to agents.", argv: ["presets", "apply", "$preset?", "--tool", "$tool?", "--mode", "$mode?"] },
-  { group: "Skill Presets", label: "Move skills to preset", description: "Move selected skills between presets.", argv: ["presets", "move-skills", "$from", "$to", "$skills"] },
-  { group: "Skill Presets", label: "Remove skills from preset", description: "Keep selected skills, remove group membership.", argv: ["presets", "remove-skills", "$from", "$skills"] },
-  { group: "Skill Presets", label: "Move whole preset", description: "Move all skills between presets.", argv: ["presets", "move", "$from", "$to"] },
   { group: "MCP", label: "Add managed MCP server", description: "Register server and target agents.", argv: ["mcp", "add", "$mcp", "--command", "$command", "--arg", "$args?", "--env", "$env?", "--tool", "$tool?"] },
   { group: "MCP", label: "Add remote MCP server", description: "Register an HTTP endpoint and headers.", argv: ["mcp", "add", "$mcp", "--url", "$url", "--header", "$headers?", "--tool", "$tool?"] },
   { group: "MCP", label: "Import MCP from agent", description: "Copy agent config servers into tm.", argv: ["mcp", "add", "--tool", "$tool?"] },
@@ -126,9 +116,6 @@ async function interactiveMenu(global: GlobalOptions): Promise<void> {
           break;
         case "skills":
           await cmdSkills(argv, global);
-          break;
-        case "presets":
-          await cmdPresets(argv, global);
           break;
         case "mcp":
           await cmdMcp(argv, global);
@@ -220,25 +207,6 @@ async function resolveMenuArgs(argv: string[]): Promise<string[] | null> {
       } else if (previous === "--env") {
         resolved.pop();
       }
-    } else if (arg === "$new_preset") {
-      const value = await selectExistingOrCustom("Preset Name", [], "New preset name: ");
-      if (value === null) return null;
-      resolved.push(value);
-    } else if (arg === "$from") {
-      const value = await selectExistingOrCustom("From Preset", await presetNameOptions(), "From preset: ");
-      if (value === null) return null;
-      resolved.push(value);
-    } else if (arg === "$to") {
-      const value = await selectExistingOrCustom("To Preset", await presetNameOptions(), "To preset: ");
-      if (value === null) return null;
-      resolved.push(value);
-    }
-    else if (arg === "$preset?") {
-      const previous = resolved[resolved.length - 1];
-      const value = await selectExistingOrCustom("Preset", await presetNameOptions("Default"), "Preset [Default]: ");
-      if (value === null) return null;
-      if (previous === "--preset") resolved.push(value || "Default");
-      else if (value && value !== "Default") resolved.push(value);
     } else if (arg === "$tool?") {
       const previous = resolved[resolved.length - 1];
       if (previous === "--tool") {
@@ -274,7 +242,6 @@ async function cmdStatus(global: GlobalOptions): Promise<void> {
   heading("Tools Manager Status");
   note(`Root: ${value.root}`);
   note(`Skills: ${value.skillCount} (${value.skillsDir})`);
-  note(`Skill presets: ${value.presetCount}`);
   note(`MCP servers: ${value.mcpCount}`);
   table(value.tools.map((tool) => ({ tool: tool.key, installed: tool.installed ? "yes" : "no", skills: getToolSkillsDirs(tool).join(", "), mcp: tool.mcpPath })), { title: "Tools" });
 }
@@ -338,32 +305,31 @@ async function cmdSkills(argv: string[], global: GlobalOptions): Promise<void> {
   const sub = argv.shift();
   switch (sub) {
     case "add": {
-      const preset = takeOption(argv, "--preset") || "Default";
       const tool = takeOption(argv, "--tool");
       if (tool) {
-        assertUsage(argv.length === 0, "Usage: tm skills add --tool <tool|all> [--preset <name>]");
-        const result = await runWithLoading(global, "Importing skills from Agent...", () => addLocalAgentSkills(tool, toolAdapters, preset));
+        assertUsage(argv.length === 0, "Usage: tm skills add --tool <tool|all>");
+        const result = await runWithLoading(global, "Importing skills from Agent...", () => addLocalAgentSkills(tool, toolAdapters));
         if (global.json) return printJson(result);
         printToolSkillImportResult(result);
         break;
       }
       if (takeFlag(argv, "--all")) {
-        assertUsage(argv.length === 0, "Usage: tm skills add --all [--preset <name>]");
-        const result = await runWithLoading(global, "Importing skills from Agents...", () => addAllLocalAgentSkills(toolAdapters, preset));
+        assertUsage(argv.length === 0, "Usage: tm skills add --all");
+        const result = await runWithLoading(global, "Importing skills from Agents...", () => addAllLocalAgentSkills(toolAdapters));
         if (global.json) return printJson(result);
         printToolSkillImportResult(result);
         break;
       }
       if (takeFlag(argv, "--codex")) {
-        assertUsage(argv.length === 0, "Usage: tm skills add --codex [--preset <name>]");
-        const skills = await runWithLoading(global, "Importing Codex skills...", () => addCodexSkills(undefined, preset));
+        assertUsage(argv.length === 0, "Usage: tm skills add --codex");
+        const skills = await runWithLoading(global, "Importing Codex skills...", () => addCodexSkills());
         if (global.json) return printJson(skills);
         printSkills(skills, "Imported Skills");
         break;
       }
       const source = argv.shift();
-      assertUsage(source && argv.length === 0, "Usage: tm skills add <source> [--preset <name>]");
-      const skills = await runWithLoading(global, "Importing skills...", () => addSkills(source, preset));
+      assertUsage(source && argv.length === 0, "Usage: tm skills add <source>");
+      const skills = await runWithLoading(global, "Importing skills...", () => addSkills(source));
       if (global.json) return printJson(skills);
       if (skills.length === 1) success(`Added skill ${skills[0]!.name}`);
       else printSkills(skills, `Imported Skills (${skills.length})`);
@@ -446,16 +412,6 @@ async function cmdSkills(argv: string[], global: GlobalOptions): Promise<void> {
       success(`Removed ${result.skill.name} from ${result.agentLink.tool}. The managed skill was kept.`);
       break;
     }
-    case "sync": {
-      const preset = argv[0]?.startsWith("--") ? "Default" : (argv.shift() || "Default");
-      const tool = takeOption(argv, "--tool") || "all";
-      const mode = takeSyncMode(argv);
-      assertUsage(argv.length === 0, "Usage: tm skills sync [preset] [--tool <tool|all>] [--mode <symlink|copy>]");
-      const result = await runWithLoading(global, "Syncing skill preset...", () => applyPreset(preset, tool, mode));
-      if (global.json) return printJson(result);
-      table(result.map((row) => ({ tool: row.tool, skill: row.skill, mode: row.mode, target: row.target })), { title: `Synced ${result.length} Skills` });
-      break;
-    }
     case "sync-selected": {
       const tool = takeOption(argv, "--tool") || "all";
       const mode = takeSyncMode(argv);
@@ -471,7 +427,7 @@ async function cmdSkills(argv: string[], global: GlobalOptions): Promise<void> {
       break;
     }
     default:
-      throw new UsageError("Usage: tm skills <add|list|show|remove|unlink|sync-selected|sync>");
+      throw new UsageError("Usage: tm skills <add|list|show|remove|unlink|sync-selected>");
   }
 }
 
@@ -487,86 +443,6 @@ function printSkills(skills: Array<{ name: string; source_type: string; descript
 function printAgentSkills(result: Array<{ tool: string; path: string; skills: Array<{ name: string; description: string | null; path: string; scope: "user" | "system"; editable: boolean; managed: boolean }> }>): void {
   const rows = result.flatMap((item) => item.skills.map((skill) => ({ tool: item.tool, name: skill.name, scope: skill.scope, access: skill.managed && skill.scope !== "system" ? "editable" : "read-only", sync: skill.managed ? "synced" : "not-synced", description: skill.description || "", path: skill.path })));
   table(rows, { title: `Agent Skills (${rows.length})`, empty: "No agent skills found." });
-}
-
-async function cmdPresets(argv: string[], global: GlobalOptions): Promise<void> {
-  const sub = argv.shift();
-  switch (sub) {
-    case "create": {
-      const name = argv.shift();
-      assertUsage(name && argv.length === 0, "Usage: tm presets create <name>");
-      const preset = await runWithLoading(global, "Creating skill preset...", () => createPreset(name));
-      if (global.json) return printJson(preset);
-      success(`Created preset ${preset.name}.`);
-      break;
-    }
-    case "list": {
-      const presets = await runWithLoading(global, "Loading skill presets...", listPresets);
-      if (global.json) return printJson(presets);
-      table(presets.map((preset) => ({ name: preset.name, skills: preset.skill_count })), { title: `Skill Presets (${presets.length})` });
-      break;
-    }
-    case "apply": {
-      const preset = argv[0]?.startsWith("--") ? "Default" : (argv.shift() || "Default");
-      const tool = takeOption(argv, "--tool") || "all";
-      const mode = takeSyncMode(argv);
-      assertUsage(argv.length === 0, "Usage: tm presets apply [preset] [--tool <tool|all>] [--mode <symlink|copy>]");
-      const result = await runWithLoading(global, "Applying skill preset...", () => applyPreset(preset, tool, mode));
-      if (global.json) return printJson(result);
-      table(result.map((row) => ({ tool: row.tool, skill: row.skill, mode: row.mode, target: row.target })), { title: `Applied ${result.length} Skills` });
-      break;
-    }
-    case "move":
-    case "mv": {
-      const from = argv.shift();
-      const to = argv.shift();
-      assertUsage(from && to, "Usage: tm presets move <from> <to>");
-      const result = await runWithLoading(global, "Moving preset skills...", () => movePreset(from, to));
-      if (global.json) return printJson(result);
-      success(`Moved ${result.skillCount} skills from ${result.from} to ${result.to}.`);
-      break;
-    }
-    case "move-skill": {
-      const skill = argv.shift();
-      const from = argv.shift();
-      const to = argv.shift();
-      assertUsage(skill && from && to, "Usage: tm presets move-skill <skill> <from> <to>");
-      const result = await runWithLoading(global, "Moving skill...", () => moveSkillPreset(skill, from, to));
-      if (global.json) return printJson(result);
-      success(`Moved ${result.skill} from ${result.from} to ${result.to}.`);
-      break;
-    }
-    case "move-skills": {
-      const from = argv.shift();
-      const to = argv.shift();
-      const skills = [...new Set(argv)];
-      assertUsage(from && to && skills.length > 0, "Usage: tm presets move-skills <from> <to> <skill...>");
-      const result = await runWithLoading(global, "Moving skills...", () => moveSkillsPreset(skills, from, to));
-      if (global.json) return printJson(result);
-      success(`Moved ${result.count} skills from ${result.from} to ${result.to}.`);
-      break;
-    }
-    case "remove-skill": {
-      const skill = argv.shift();
-      const preset = argv.shift();
-      assertUsage(skill && preset && argv.length === 0, "Usage: tm presets remove-skill <skill> <preset>");
-      const result = await runWithLoading(global, "Removing skill from preset...", () => removeSkillFromPreset(skill, preset));
-      if (global.json) return printJson(result);
-      success(`Removed ${result.skill} from ${result.preset}. The managed skill was kept.`);
-      break;
-    }
-    case "remove-skills": {
-      const preset = argv.shift();
-      const skills = [...new Set(argv)];
-      assertUsage(preset && skills.length > 0, "Usage: tm presets remove-skills <preset> <skill...>");
-      const result = await runWithLoading(global, "Removing skills from preset...", () => removeSkillsFromPreset(skills, preset));
-      if (global.json) return printJson(result);
-      success(`Removed ${result.count} skills from ${result.preset}. The managed skills were kept.`);
-      break;
-    }
-    default:
-      throw new UsageError("Usage: tm presets <create|list|apply|move|move-skill|move-skills|remove-skill|remove-skills>");
-  }
 }
 
 async function cmdMcp(argv: string[], global: GlobalOptions): Promise<void> {
@@ -766,7 +642,7 @@ async function selectMenu(title: string, commands: MenuCommand[]): Promise<MenuC
     process.stdout.write("\x1b[2J\x1b[H");
     process.stdout.write(`${ansi.dim("╭──────────────────────────────────────────────────────────────────────────────╮")}\n`);
     process.stdout.write(`${ansi.dim("│")} ${ansi.signal(title.padEnd(76))} ${ansi.dim("│")}\n`);
-    process.stdout.write(`${ansi.dim("│")} ${ansi.muted("One local control plane for skills, presets, and MCP servers.".padEnd(76))} ${ansi.dim("│")}\n`);
+    process.stdout.write(`${ansi.dim("│")} ${ansi.muted("One local control plane for skills and MCP servers.".padEnd(76))} ${ansi.dim("│")}\n`);
     process.stdout.write(`${ansi.dim("╰──────────────────────────────────────────────────────────────────────────────╯")}\n\n`);
     process.stdout.write(`${ansi.muted("↑/↓ choose")}  ${ansi.muted("Enter run")}  ${ansi.muted("Esc deselect")}  ${ansi.muted("q quit")}\n\n`);
     let group = "";
@@ -999,15 +875,6 @@ async function skillNameOptions(): Promise<string[]> {
   }
 }
 
-async function presetNameOptions(fallback?: string): Promise<string[]> {
-  try {
-    const names = (await listPresets()).map((preset) => preset.name);
-    return fallback && !names.includes(fallback) ? [fallback, ...names] : names;
-  } catch {
-    return fallback ? [fallback] : [];
-  }
-}
-
 async function mcpNameOptions(enabledOnly = false): Promise<string[]> {
   try {
     return (await listMcpServers()).filter((server) => !enabledOnly || server.enabled).map((server) => server.name);
@@ -1096,25 +963,16 @@ function printHelp(): void {
   tm web [--port <port>] [--no-open] [--dev]
   tm status [--json]
   tm agents list [--tool <tool|all>] [--json]
-  tm skills add <source> [--preset <name>]
-  tm skills add --tool <tool|all> [--preset <name>]
-  tm skills add --codex [--preset <name>]
-  tm skills add --all [--preset <name>]
+  tm skills add <source>
+  tm skills add --tool <tool|all>
+  tm skills add --codex
+  tm skills add --all
   tm skills list [--json]
   tm skills list --tool <tool|all> [--json]
   tm skills show <name> [--json]
   tm skills remove <name>
   tm skills unlink <name> --tool <codex|claude_code|cursor|opencode>
   tm skills sync-selected <name...> [--tool <tool|all>] [--mode <symlink|copy>]
-  tm skills sync [preset] [--tool <tool|all>] [--mode <symlink|copy>]
-  tm presets create <name>
-  tm presets list [--json]
-  tm presets apply [preset] [--tool <tool|all>] [--mode <symlink|copy>]
-  tm presets move-skill <skill> <from> <to>
-  tm presets move-skills <from> <to> <skill...>
-  tm presets remove-skill <skill> <preset>
-  tm presets remove-skills <preset> <skill...>
-  tm presets move <from> <to>
   tm mcp add <name> (--command <cmd> [--arg value] [--env K=V] | --url <url> [--header K=V]) [--tool <tool|all>]
   tm mcp add --tool <tool|all>
   tm mcp list [--json]
