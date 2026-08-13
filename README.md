@@ -75,7 +75,7 @@ tm web
 
 ![Tools Manager Web dashboard](docs/images/web-dashboard.png)
 
-The dashboard manages skills, MCP servers, Agent imports and sync operations, and Git backups through the same core APIs as the CLI.
+The dashboard manages skills, MCP servers, local Codex and Claude Code sessions, Agent imports and sync operations, and Git backups through the same core APIs as the CLI.
 
 * The Skills and MCP views provide submitted search by button or Enter and per-row Agent sync controls.
 * Agent filters show the Agent's complete installed inventory: managed resources remain actionable, while unmanaged names open read-only details without edit, sync, or remove actions.
@@ -83,6 +83,7 @@ The dashboard manages skills, MCP servers, Agent imports and sync operations, an
 * Click a skill name to inspect its source metadata and edit the complete `SKILL.md`.
 * Click an MCP server name to edit its name, transport, command or URL, arguments, environment, HTTP headers, target tools, and enabled state.
 * MCP environment and header values are available only through the local detail endpoint and are omitted from the dashboard snapshot.
+* Sessions scans Codex and Claude Code history, with provider filters, search, on-demand transcripts, resume commands, and guarded deletion.
 
 The server binds to `127.0.0.1` only. It uses port `4343` by default and tries the next available local port when needed. To select a port or avoid opening a browser automatically:
 

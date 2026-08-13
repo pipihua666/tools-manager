@@ -32,6 +32,7 @@ import {
   type McpServer,
 } from "../core/mcp";
 import { backup } from "../core/backup";
+import { deleteSession, launchSession, listSessions, loadSessionMessages, parseSessionProvider } from "../core/session";
 import { toolAdapters } from "../core/tools";
 import { webAppHtml } from "./app";
 
@@ -127,6 +128,23 @@ async function handleRequest(request: Request, token: string, hostname: string, 
 
   try {
     if (request.method === "GET" && url.pathname === "/api/snapshot") return json(await snapshot());
+    if (request.method === "GET" && url.pathname === "/api/sessions") {
+      const providerValue = url.searchParams.get("provider");
+      const provider = providerValue && providerValue !== "all" ? parseSessionProvider(providerValue) : undefined;
+      return json({ sessions: await listSessions(provider) });
+    }
+    if (request.method === "GET" && url.pathname === "/api/session-messages") {
+      const provider = parseSessionProvider(requiredQuery(url, "provider"));
+      return json(await loadSessionMessages(provider, requiredQuery(url, "sessionId"), requiredQuery(url, "sourcePath")));
+    }
+    if (request.method === "POST" && url.pathname === "/api/sessions/resume") {
+      const body = await readBody(request);
+      return json(await launchSession(parseSessionProvider(body.provider), requiredString(body, "sessionId"), requiredString(body, "sourcePath")));
+    }
+    if (request.method === "POST" && url.pathname === "/api/sessions/delete") {
+      const body = await readBody(request);
+      return json({ session: await deleteSession(parseSessionProvider(body.provider), requiredString(body, "sessionId"), requiredString(body, "sourcePath")) });
+    }
     if (request.method === "GET" && url.pathname.startsWith("/api/agent-skills/")) {
       const [tool, name] = pathParts(url.pathname, "/api/agent-skills/", 2);
       const selectedTool = optionalTool(tool);
@@ -275,6 +293,12 @@ async function readBody(request: Request): Promise<JsonRecord> {
 function requiredString(body: JsonRecord, key: string): string {
   const value = body[key];
   if (typeof value !== "string" || !value.trim()) throw new Error(`Missing required field: ${key}`);
+  return value.trim();
+}
+
+function requiredQuery(url: URL, key: string): string {
+  const value = url.searchParams.get(key);
+  if (!value?.trim()) throw new Error(`Missing required query: ${key}`);
   return value.trim();
 }
 

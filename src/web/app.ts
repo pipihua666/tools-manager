@@ -214,7 +214,7 @@ export const webAppHtml = String.raw`<!doctype html>
     .dialog-head h2 { font-size: 17px; }
     .dialog-body { min-height: 0; padding: 22px 24px 24px; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
     .dialog-actions { position: relative; z-index: 1; display: flex; justify-content: flex-end; gap: 8px; padding: 16px 24px; border-top: 1px solid var(--line); background: #ecefe8; }
-    #form-body { display: grid; gap: 18px; }
+    #form-body { display: grid; align-content: start; gap: 18px; }
     [data-mcp-transport], [data-mcp-add-mode], [data-skill-add-mode] { display: grid; gap: 18px; }
     [data-mcp-transport][hidden], [data-mcp-add-mode][hidden], [data-skill-add-mode][hidden] { display: none; }
     .field { display: grid; gap: 8px; margin: 0; }
@@ -300,6 +300,74 @@ export const webAppHtml = String.raw`<!doctype html>
     .mcp-add-dialog #dynamic-form { height: min(680px, calc(100vh - 40px)); height: min(680px, calc(100dvh - 40px)); }
     .btn.loading::before { content: ""; width: 13px; height: 13px; flex: 0 0 13px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .75s linear infinite; }
     .agent-sync.loading .agent-glyph { display: none; }
+    .content.sessions-content { max-width: none; height: calc(100vh - 108px); height: calc(100dvh - 108px); padding-top: 18px; padding-bottom: 18px; }
+    .session-shell { height: 100%; min-height: 520px; display: grid; grid-template-columns: 320px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); border: 1px solid var(--line-strong); border-top: 3px solid var(--ink); background: var(--panel); box-shadow: 6px 6px 0 rgba(16, 21, 19, .08); overflow: hidden; }
+    .session-sidebar { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr); border-right: 1px solid var(--line-strong); background: #f5f7f1; }
+    .session-sidebar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 15px 16px 12px; border-bottom: 1px solid var(--line); }
+    .session-sidebar-head strong { font: 700 14px/1 var(--display); text-transform: uppercase; }
+    .session-count { min-width: 28px; height: 22px; display: inline-grid; place-items: center; padding: 0 7px; background: var(--graphite); color: var(--accent); font: 700 9px/1 var(--mono); }
+    .session-controls { display: grid; padding: 10px; border-bottom: 1px solid var(--line); }
+    .session-control-row { display: grid; grid-template-columns: minmax(0, 1fr) 36px; gap: 7px; }
+    .session-search { display: grid; grid-template-columns: minmax(0, 1fr) 36px; }
+    .session-search input { min-width: 0; height: 36px; padding: 7px 10px; border: 1px solid var(--line-strong); border-right: 0; background: white; font-size: 11px; }
+    .session-search button { width: 36px; border: 1px solid var(--line-strong); background: var(--graphite); color: white; font: 15px/1 var(--mono); }
+    .session-agent-select .select-trigger { width: 36px; min-height: 36px; height: 36px; justify-content: center; padding: 7px; }
+    .session-agent-select .select-trigger::before, .session-agent-select .select-trigger::after { display: none; }
+    .session-agent-select .session-provider-icon { width: 20px; height: 20px; }
+    .session-agent-menu .select-option { gap: 9px; }
+    .session-agent-menu .select-option .session-provider-icon { width: 19px; height: 19px; flex: 0 0 19px; color: #c8d0cb; }
+    .session-agent-menu .select-option[aria-selected="true"] .session-provider-icon { color: var(--ink); }
+    .session-agent-all { width: 19px; height: 19px; flex: 0 0 19px; display: grid; place-items: center; border: 1px solid #77817b; border-radius: 50%; color: #aeb7b1; font: 700 9px/1 var(--mono); }
+    .session-agent-menu .select-option[aria-selected="true"] .session-agent-all { border-color: var(--ink); color: var(--ink); }
+    .session-list { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    .session-item { width: 100%; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; padding: 13px 14px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); text-align: left; }
+    .session-item:hover { background: #eef2e7; }
+    .session-item[aria-current="true"] { background: #e8f0d1; box-shadow: inset 3px 0 0 var(--accent-strong); }
+    .session-provider-icon { width: 25px; height: 25px; display: grid; place-items: center; color: #38413c; }
+    .session-provider-icon svg { width: 100%; height: 100%; fill: currentColor; }
+    .session-item-copy { min-width: 0; }
+    .session-item-title { display: -webkit-box; overflow: hidden; font-size: 12px; font-weight: 700; line-height: 1.35; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .session-item-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; color: var(--muted); font: 9px/1.2 var(--mono); }
+    .session-item-dir { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .session-workspace { min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+    .session-detail-head { padding: 16px 18px 13px; border-bottom: 1px solid var(--line-strong); background: #fcfdf9; }
+    .session-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+    .session-title-main { min-width: 0; }
+    .session-title-main h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; }
+    .session-meta-line { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 7px; color: var(--muted); font: 9px/1.4 var(--mono); }
+    .session-meta-line button { min-width: 0; max-width: 360px; padding: 0; border: 0; background: transparent; color: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: underline; text-underline-offset: 2px; }
+    .session-actions { display: flex; gap: 7px; flex: 0 0 auto; }
+    .session-command { display: grid; grid-template-columns: minmax(0, 1fr) 34px; align-items: center; gap: 4px; margin-top: 12px; }
+    .session-command code { min-width: 0; padding: 8px 10px; background: #edf0e9; border-left: 3px solid var(--blue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 10px/1.2 var(--mono); }
+    .session-command button { width: 34px; height: 32px; padding: 0; border: 1px solid var(--line); background: transparent; color: var(--muted); }
+    .session-command svg, .session-actions svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .session-body { min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 220px; }
+    .session-transcript { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+    .session-transcript-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 11px; font-weight: 700; }
+    .session-truncated { margin-left: auto; color: #845c12; font: 8px/1 var(--mono); text-transform: uppercase; }
+    .session-messages { min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 14px 16px 30px; overscroll-behavior: contain; scroll-behavior: smooth; }
+    .session-message { position: relative; width: 100%; margin-bottom: 11px; padding: 11px 13px; border: 1px solid var(--line); border-left: 3px solid #8d9891; background: white; }
+    .session-message.user, .session-message.assistant { width: fit-content; max-width: 78%; padding: 12px 14px; border-left-width: 1px; border-radius: 4px; }
+    .session-message.user { margin-right: auto; border-color: #b8ca7c; background: #f2f8df; }
+    .session-message.assistant { margin-left: auto; border-color: #91b9ca; background: #edf7fb; }
+    .session-message.user::after, .session-message.assistant::after { content: ""; position: absolute; top: 15px; width: 8px; height: 8px; background: inherit; transform: rotate(45deg); }
+    .session-message.user::after { left: -5px; border-left: 1px solid #b8ca7c; border-bottom: 1px solid #b8ca7c; }
+    .session-message.assistant::after { right: -5px; border-top: 1px solid #91b9ca; border-right: 1px solid #91b9ca; }
+    .session-message.tool { border-left-color: #7555a5; background: #faf8fd; }
+    .session-message.developer, .session-message.system { border-color: #e1bb70; border-left: 3px solid var(--amber); background: #fff6e5; }
+    .session-message.active { animation: session-flash 1.2s ease-out; }
+    .session-message-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; color: var(--muted); font: 700 8px/1 var(--mono); text-transform: uppercase; }
+    .session-message-content { margin: 0; padding: 0; border: 0; background: transparent; color: #252c28; font: 11px/1.62 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+    .session-toc { min-width: 0; overflow-x: hidden; overflow-y: auto; border-left: 1px solid var(--line); background: #f5f7f1; }
+    .session-toc-title { position: sticky; top: 0; padding: 13px 14px; border-bottom: 1px solid var(--line); background: #f5f7f1; font: 700 9px/1 var(--mono); text-transform: uppercase; }
+    .session-toc button { width: 100%; min-width: 0; display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; gap: 7px; overflow: hidden; padding: 9px 12px; border: 0; border-bottom: 1px solid #e2e6df; background: transparent; color: var(--muted); text-align: left; font-size: 10px; line-height: 1.35; }
+    .session-toc button:hover { background: white; color: var(--ink); }
+    .session-toc button > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .toc-index { width: 20px; height: 20px; display: grid; place-items: center; background: #e4ebd2; color: #587018; font: 700 8px/1 var(--mono); }
+    .session-placeholder { height: 100%; display: grid; place-items: center; padding: 30px; color: var(--muted); text-align: center; }
+    .session-placeholder strong { display: block; color: var(--ink); font-size: 14px; }
+    .session-placeholder span { display: block; margin-top: 7px; font-size: 11px; }
+    @keyframes session-flash { 0%, 35% { background: #eff8cf; } }
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes pulse { 50% { opacity: .48; transform: scale(.82); } }
     @keyframes view-in { from { opacity: 0; transform: translateY(10px); } }
@@ -334,6 +402,10 @@ export const webAppHtml = String.raw`<!doctype html>
       .metric:nth-child(2) { border-right: 0; }
       .metric:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
       .metric { min-height: 110px; }
+      .content.sessions-content { height: auto; min-height: calc(100vh - 154px); padding: 14px; }
+      .session-shell { min-height: calc(100vh - 182px); grid-template-columns: 270px minmax(0, 1fr); }
+      .session-body { grid-template-columns: minmax(0, 1fr); }
+      .session-toc { display: none; }
     }
     @media (max-width: 560px) {
       .brand { display: none; }
@@ -366,6 +438,15 @@ export const webAppHtml = String.raw`<!doctype html>
       #form-body, [data-mcp-transport], [data-mcp-add-mode], [data-skill-add-mode] { gap: 14px; }
       .field textarea { min-height: 88px; }
       th, td { padding: 11px 9px; }
+      .content.sessions-content { padding: 10px; }
+      .session-shell { min-height: calc(100vh - 134px); display: block; overflow: visible; }
+      .session-sidebar { height: 300px; border-right: 0; border-bottom: 1px solid var(--line-strong); }
+      .session-workspace { min-height: 620px; }
+      .session-title-row { display: grid; gap: 12px; }
+      .session-actions { width: 100%; }
+      .session-actions .btn { flex: 1 1 auto; }
+      .session-title-main h2 { white-space: normal; overflow-wrap: anywhere; }
+      .session-message.user, .session-message.assistant { max-width: 88%; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -381,6 +462,7 @@ export const webAppHtml = String.raw`<!doctype html>
         <button data-view="dashboard"><span class="nav-code">01</span><span>Dashboard</span></button>
         <button data-view="skills"><span class="nav-code">02</span><span>Skills</span></button>
         <button data-view="mcp"><span class="nav-code">03</span><span>MCP Servers</span></button>
+        <button data-view="sessions"><span class="nav-code">04</span><span>Sessions</span></button>
       </nav>
       <div class="sidebar-foot"><div class="connection-line"><span class="status-pulse"></span><span>LOCAL SESSION</span></div><div id="server-address"></div></div>
     </aside>
@@ -398,11 +480,17 @@ export const webAppHtml = String.raw`<!doctype html>
     const TOKEN = "__TM_TOKEN__";
     const DEV = __TM_DEV__;
     const TOOLS = ["all", "codex", "claude_code", "cursor", "opencode"];
-    const state = { data: null, view: location.hash.slice(1) || "dashboard", skillFilter: "all", mcpFilter: "all", skillSearch: "", mcpSearch: "", skillSearchDraft: "", mcpSearchDraft: "", formHandler: null, confirmResolve: null };
+    const state = {
+      data: null, view: location.hash.slice(1) || "dashboard", skillFilter: "all", mcpFilter: "all",
+      skillSearch: "", mcpSearch: "", skillSearchDraft: "", mcpSearchDraft: "", formHandler: null, confirmResolve: null,
+      sessions: [], sessionsLoaded: false, sessionsLoading: false, sessionProvider: "all", sessionSearch: "", sessionSearchDraft: "",
+      selectedSessionKey: "", sessionTranscript: null, sessionMessagesLoading: false
+    };
     const titles = {
       dashboard: ["Workspace overview", "Dashboard"],
       skills: ["Managed resources", "Skills"],
-      mcp: ["Managed integrations", "MCP Servers"]
+      mcp: ["Managed integrations", "MCP Servers"],
+      sessions: ["Local conversation history", "Sessions"]
     };
 
     const view = document.getElementById("view");
@@ -438,6 +526,8 @@ export const webAppHtml = String.raw`<!doctype html>
     function trashIcon() {
       return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5"/></svg>';
     }
+    function copyIcon() { return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="1"/><path d="M15 9V4H4v11h5"/></svg>'; }
+    function playIcon() { return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg>'; }
     function filteredResources(kind, tool) {
       const resources = kind === "skill" ? state.data.skills : state.data.mcpServers;
       if (tool === "all") return resources.map(function(item) {
@@ -508,7 +598,11 @@ export const webAppHtml = String.raw`<!doctype html>
     }
     async function load(button) {
       setButtonLoading(button, true, "Loading...");
-      try { state.data = await api("/api/snapshot"); render(); }
+      try {
+        state.data = await api("/api/snapshot");
+        render();
+        if (state.view === "sessions" && !state.sessionsLoaded) await loadSessions();
+      }
       catch (error) { toast(error.message, true); }
       finally { setButtonLoading(button, false); }
     }
@@ -518,7 +612,7 @@ export const webAppHtml = String.raw`<!doctype html>
         button.dataset.loadingLabel = button.innerHTML;
         button.disabled = true;
         button.classList.add("loading");
-        button.textContent = message || "Working...";
+        button.textContent = button.classList.contains("icon") ? "" : message || "Working...";
         button.setAttribute("aria-busy", "true");
       } else if (button.dataset.loadingLabel !== undefined) {
         button.innerHTML = button.dataset.loadingLabel;
@@ -559,6 +653,8 @@ export const webAppHtml = String.raw`<!doctype html>
       if (state.view === "dashboard") renderDashboard();
       if (state.view === "skills") renderSkills();
       if (state.view === "mcp") renderMcp();
+      if (state.view === "sessions") renderSessions();
+      view.classList.toggle("sessions-content", state.view === "sessions");
       view.classList.remove("view-enter");
       void view.offsetWidth;
       view.classList.add("view-enter");
@@ -567,6 +663,7 @@ export const webAppHtml = String.raw`<!doctype html>
       const refresh = '<button class="btn icon" data-action="refresh" aria-label="Refresh" title="Refresh">↻</button>';
       if (state.view === "skills") return refresh + '<button class="btn primary" data-action="add-skill" title="Add a managed skill" aria-label="Add a managed skill">Add</button>';
       if (state.view === "mcp") return refresh + '<button class="btn primary" data-action="add-mcp" title="Add an MCP server" aria-label="Add an MCP server">Add</button>';
+      if (state.view === "sessions") return '<button class="btn icon" data-action="refresh-sessions" aria-label="Rescan sessions" title="Rescan sessions">↻</button>';
       return refresh;
     }
     function metrics() {
@@ -584,6 +681,165 @@ export const webAppHtml = String.raw`<!doctype html>
       view.innerHTML = metrics() +
         '<div class="manager-path" aria-label="Manager home: ' + esc(state.data.status.root) + '"><code title="' + esc(state.data.status.root) + '">' + esc(state.data.status.root) + '</code></div>' +
         '<section class="section">' + sectionHead("Agent readiness", state.data.agents.length + " configured destinations", "") + agentTable(state.data.agents) + '</section>';
+    }
+    function sessionKey(session) { return session.providerId + ":" + session.sessionId; }
+    function selectedSession() { return state.sessions.find(function(session) { return sessionKey(session) === state.selectedSessionKey; }) || null; }
+    function providerLabel(provider) { return provider === "all" ? "All" : provider === "claude" ? "Claude Code" : "Codex"; }
+    function providerIcon(provider) { return '<span class="session-provider-icon">' + toolIcon(provider === "claude" ? "claude_code" : "codex") + '</span>'; }
+    function sessionProviderIcon(provider) { return provider === "all" ? '<span class="session-agent-all">A</span>' : providerIcon(provider); }
+    function sessionProviderSelect() {
+      const providers = ["all", "codex", "claude"];
+      const options = providers.map(function(provider) {
+        return '<button type="button" class="select-option" role="option" tabindex="-1" data-select-option data-value="' + provider + '" aria-selected="' + (provider === state.sessionProvider) + '">' + sessionProviderIcon(provider) + '<span>' + esc(providerLabel(provider)) + '</span></button>';
+      }).join("");
+      return '<div class="select-shell session-agent-select"><input type="hidden" name="sessionProvider" value="' + esc(state.sessionProvider) + '"><button id="session-agent-filter" type="button" class="select-trigger" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-label="Filter sessions by Agent: ' + esc(providerLabel(state.sessionProvider)) + '" title="' + esc(providerLabel(state.sessionProvider)) + '">' + sessionProviderIcon(state.sessionProvider) + '<span class="select-label" data-select-label hidden>' + esc(providerLabel(state.sessionProvider)) + '</span></button><div class="select-menu session-agent-menu" role="listbox" aria-label="Filter sessions by Agent" hidden>' + options + '</div></div>';
+    }
+    function baseName(path) { return String(path || "").split(/[\\/]/).filter(Boolean).pop() || "Unknown directory"; }
+    function formatSessionTime(value) {
+      if (!value) return "Unknown time";
+      return new Intl.DateTimeFormat(undefined, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+    }
+    function relativeSessionTime(value) {
+      if (!value) return "unknown";
+      const seconds = Math.max(0, Math.floor((Date.now() - value) / 1000));
+      if (seconds < 60) return "just now";
+      if (seconds < 3600) return Math.floor(seconds / 60) + "m ago";
+      if (seconds < 86400) return Math.floor(seconds / 3600) + "h ago";
+      if (seconds < 604800) return Math.floor(seconds / 86400) + "d ago";
+      return formatSessionTime(value).split(",")[0];
+    }
+    function filteredSessions() {
+      const query = state.sessionSearch.trim().toLowerCase();
+      return state.sessions.filter(function(session) {
+        if (state.sessionProvider !== "all" && session.providerId !== state.sessionProvider) return false;
+        if (!query) return true;
+        return [session.title, session.summary, session.projectDir, session.sessionId, session.sourcePath].some(function(value) {
+          return String(value || "").toLowerCase().includes(query);
+        });
+      });
+    }
+    function renderSessions() {
+      const sessions = filteredSessions();
+      const visible = sessions.slice(0, 300);
+      const selected = selectedSession();
+      const list = state.sessionsLoading
+        ? '<div class="session-placeholder"><div><strong>Scanning local sessions</strong><span>Reading lightweight metadata from Codex and Claude Code.</span></div></div>'
+        : visible.length
+        ? visible.map(function(session) {
+            const active = sessionKey(session) === state.selectedSessionKey;
+            return '<button type="button" class="session-item" data-action="select-session" data-session-key="' + esc(sessionKey(session)) + '" aria-current="' + active + '">' + providerIcon(session.providerId) +
+              '<span class="session-item-copy"><span class="session-item-title">' + esc(session.title || session.sessionId) + '</span><span class="session-item-meta"><span class="session-item-dir" title="' + esc(session.projectDir || "Unknown directory") + '">' + esc(baseName(session.projectDir)) + '</span><span>' + esc(relativeSessionTime(session.lastActiveAt || session.createdAt)) + '</span></span></span></button>';
+          }).join("") + (sessions.length > visible.length ? '<div class="session-placeholder"><span>Showing 300 of ' + sessions.length + '. Search to narrow the list.</span></div>' : '')
+        : '<div class="session-placeholder"><div><strong>No sessions found</strong><span>Try another provider or search term.</span></div></div>';
+      view.innerHTML = '<div class="session-shell"><aside class="session-sidebar"><div class="session-sidebar-head"><strong>Session list</strong><span class="session-count">' + sessions.length + '</span></div>' +
+        '<div class="session-controls"><div class="session-control-row"><form class="session-search" data-session-search-form><input type="search" name="query" value="' + esc(state.sessionSearchDraft) + '" placeholder="Search sessions" aria-label="Search sessions"><button type="submit" aria-label="Search" title="Search">⌕</button></form>' + sessionProviderSelect() + '</div></div>' +
+        '<div class="session-list">' + list + '</div></aside>' + renderSessionWorkspace(selected) + '</div>';
+    }
+    function renderSessionWorkspace(session) {
+      if (!session) return '<section class="session-workspace"><div class="session-placeholder"><div><strong>Select a session</strong><span>Conversation details load only when needed.</span></div></div></section>';
+      const transcript = state.sessionTranscript;
+      const messages = transcript && transcript.sessionKey === sessionKey(session) ? transcript.messages : [];
+      const messageList = state.sessionMessagesLoading
+        ? '<div class="session-placeholder"><div><strong>Loading conversation</strong><span>Large histories may take a moment.</span></div></div>'
+        : messages.length
+        ? messages.map(function(message, index) {
+            const role = ["user", "assistant", "tool", "developer", "system"].includes(message.role) ? message.role : "system";
+            return '<article class="session-message ' + role + '" id="session-message-' + index + '"><div class="session-message-head"><span>' + esc(message.role) + '</span><time>' + esc(message.ts ? formatSessionTime(message.ts) : "") + '</time></div><pre class="session-message-content">' + esc(message.content) + '</pre></article>';
+          }).join("")
+        : '<div class="session-placeholder"><div><strong>No readable messages</strong><span>The session metadata is available, but its transcript format was not recognized.</span></div></div>';
+      const toc = messages.map(function(message, index) { return { message: message, index: index }; }).filter(function(item) { return item.message.role === "user"; }).slice(0, 80);
+      const tocRows = toc.length ? toc.map(function(item, index) {
+        return '<button type="button" data-action="session-toc" data-message-index="' + item.index + '"><span class="toc-index">' + (index + 1) + '</span><span>' + esc(item.message.content.slice(0, 72)) + '</span></button>';
+      }).join("") : '<div class="session-placeholder"><span>No user messages</span></div>';
+      const truncated = transcript && transcript.sessionKey === sessionKey(session) && transcript.truncated;
+      return '<section class="session-workspace"><header class="session-detail-head"><div class="session-title-row"><div class="session-title-main"><div class="session-meta-line"><span class="tag green">' + esc(providerLabel(session.providerId)) + '</span>' + (session.archived ? '<span class="tag amber">archived</span>' : '') + '</div><h2>' + esc(session.title || session.sessionId) + '</h2><div class="session-meta-line"><time>' + esc(formatSessionTime(session.lastActiveAt || session.createdAt)) + '</time>' +
+        (session.projectDir ? '<button type="button" data-action="copy-session-dir" title="Copy ' + esc(session.projectDir) + '">' + esc(session.projectDir) + '</button>' : '<span>Unknown directory</span>') + '<span>' + esc(basenameForDisplay(session.sourcePath)) + '</span></div></div>' +
+        '<div class="session-actions"><button type="button" class="btn primary" data-action="resume-session">' + playIcon() + '<span>Resume</span></button><button type="button" class="btn danger" data-action="delete-session">' + trashIcon() + '<span>Delete</span></button></div></div>' +
+        '<div class="session-command"><code title="' + esc(session.resumeCommand) + '">' + esc(session.resumeCommand) + '</code><button type="button" data-action="copy-session-command" aria-label="Copy resume command" title="Copy resume command">' + copyIcon() + '</button></div></header>' +
+        '<div class="session-body"><div class="session-transcript"><div class="session-transcript-head"><span>Conversation</span><span class="session-count">' + (transcript && transcript.sessionKey === sessionKey(session) ? transcript.total : messages.length) + '</span>' + (truncated ? '<span class="session-truncated">latest messages shown</span>' : '') + '</div><div class="session-messages">' + messageList + '</div></div>' +
+        '<aside class="session-toc"><div class="session-toc-title">Conversation index</div>' + tocRows + '</aside></div></section>';
+    }
+    function renderSelectedSession() {
+      const key = state.selectedSessionKey;
+      view.querySelectorAll(".session-item").forEach(function(item) {
+        item.setAttribute("aria-current", String(item.dataset.sessionKey === key));
+      });
+      const workspace = view.querySelector(".session-workspace");
+      if (workspace) workspace.outerHTML = renderSessionWorkspace(selectedSession());
+      else renderSessions();
+    }
+    function basenameForDisplay(path) { return String(path || "").split(/[\\/]/).pop() || ""; }
+    async function loadSessions(button) {
+      state.sessionsLoading = true;
+      if (state.view === "sessions") renderSessions();
+      setButtonLoading(button, true, "Scanning...");
+      try {
+        const payload = await api("/api/sessions");
+        state.sessions = payload.sessions;
+        state.sessionsLoaded = true;
+        if (!selectedSession()) state.selectedSessionKey = state.sessions[0] ? sessionKey(state.sessions[0]) : "";
+        state.sessionsLoading = false;
+        renderSessions();
+        if (selectedSession()) await loadSelectedSessionMessages();
+      } catch (error) {
+        state.sessionsLoading = false;
+        toast(error.message, true);
+        renderSessions();
+      } finally { setButtonLoading(button, false); }
+    }
+    async function loadSelectedSessionMessages() {
+      const session = selectedSession();
+      if (!session) return;
+      const key = sessionKey(session);
+      state.sessionMessagesLoading = true;
+      state.sessionTranscript = null;
+      renderSelectedSession();
+      try {
+        const query = new URLSearchParams({ provider: session.providerId, sessionId: session.sessionId, sourcePath: session.sourcePath });
+        const transcript = await api("/api/session-messages?" + query.toString());
+        if (state.selectedSessionKey !== key) return;
+        state.sessionTranscript = Object.assign({ sessionKey: key }, transcript);
+      } catch (error) { toast(error.message, true); }
+      finally { if (state.selectedSessionKey === key) { state.sessionMessagesLoading = false; renderSelectedSession(); } }
+    }
+    async function copyText(value, message) {
+      try {
+        await navigator.clipboard.writeText(value);
+      } catch {
+        const input = document.createElement("textarea");
+        input.value = value; input.style.position = "fixed"; input.style.opacity = "0"; document.body.appendChild(input); input.select(); document.execCommand("copy"); input.remove();
+      }
+      toast(message || "Copied.");
+    }
+    async function resumeSelectedSession(button) {
+      const session = selectedSession();
+      if (!session) return;
+      setButtonLoading(button, true, "Opening...");
+      try {
+        const result = await api("/api/sessions/resume", { method: "POST", body: JSON.stringify({ provider: session.providerId, sessionId: session.sessionId, sourcePath: session.sourcePath }) });
+        if (result.launched) toast("Opened the session in Terminal.app.");
+        else await copyText(result.command, "Resume command copied.");
+      } catch (error) {
+        await copyText(session.resumeCommand, "Terminal could not be opened. Resume command copied.");
+      } finally { setButtonLoading(button, false); }
+    }
+    async function deleteSelectedSession() {
+      const session = selectedSession();
+      if (!session) return;
+      const confirmButton = await confirmAction("Delete session", "Permanently delete \"" + session.title + "\"?\n\nSession ID: " + session.sessionId + "\nThis cannot be undone.");
+      if (!confirmButton) return;
+      setButtonLoading(confirmButton, true, "Deleting...");
+      try {
+        await api("/api/sessions/delete", { method: "POST", body: JSON.stringify({ provider: session.providerId, sessionId: session.sessionId, sourcePath: session.sourcePath }) });
+        document.getElementById("confirm-dialog").close();
+        state.sessions = state.sessions.filter(function(item) { return sessionKey(item) !== sessionKey(session); });
+        state.selectedSessionKey = state.sessions[0] ? sessionKey(state.sessions[0]) : "";
+        state.sessionTranscript = null;
+        renderSessions();
+        toast("Deleted session " + session.sessionId + ".");
+        if (selectedSession()) await loadSelectedSessionMessages();
+      } catch (error) { toast(error.message, true); }
+      finally { setButtonLoading(confirmButton, false); }
     }
     function skillTable(skills, actions, filter, query) {
       if (!skills.length) return query
@@ -712,17 +968,26 @@ export const webAppHtml = String.raw`<!doctype html>
         if (shell === except) return;
         shell.classList.remove("open");
         shell.querySelector("[data-select-trigger]").setAttribute("aria-expanded", "false");
-        shell.querySelector(".select-menu").hidden = true;
+        const menu = shell.selectMenu || shell.querySelector(".select-menu");
+        menu.hidden = true;
+        if (menu.parentElement !== shell) shell.appendChild(menu);
       });
     }
     function toggleSelectMenu(trigger, forceOpen) {
       const shell = trigger.closest(".select-shell");
-      const menu = shell.querySelector(".select-menu");
+      const menu = shell.selectMenu || shell.querySelector(".select-menu");
       const opening = forceOpen === undefined ? !shell.classList.contains("open") : forceOpen;
       closeSelectMenus(shell);
       shell.classList.toggle("open", opening);
       trigger.setAttribute("aria-expanded", String(opening));
       menu.hidden = !opening;
+      if (opening && shell.classList.contains("session-agent-select")) {
+        shell.selectMenu = menu;
+        menu.selectShell = shell;
+        document.body.appendChild(menu);
+      } else if (!opening && menu.parentElement !== shell) {
+        shell.appendChild(menu);
+      }
       if (opening) requestAnimationFrame(function() {
         positionSelectMenu(trigger, menu);
         const activeOption = menu.querySelector('[aria-selected="true"]') || menu.querySelector("[data-select-option]");
@@ -738,19 +1003,38 @@ export const webAppHtml = String.raw`<!doctype html>
       const preferredHeight = Math.min(224, menu.scrollHeight || 224);
       const openAbove = roomBelow < Math.min(160, preferredHeight) && roomAbove > roomBelow;
       const available = Math.max(96, openAbove ? roomAbove : roomBelow);
-      menu.style.left = Math.max(8, rect.left) + "px";
-      menu.style.width = Math.min(rect.width, window.innerWidth - 16) + "px";
+      const viewportGap = 8;
+      const sessionMenu = menu.classList.contains("session-agent-menu");
+      const menuWidth = Math.min(sessionMenu ? 148 : rect.width, window.innerWidth - viewportGap * 2);
+      const preferredLeft = sessionMenu ? rect.right - menuWidth : rect.left;
+      const menuLeft = Math.min(Math.max(viewportGap, preferredLeft), Math.max(viewportGap, window.innerWidth - menuWidth - viewportGap));
+      menu.style.left = menuLeft + "px";
+      menu.style.width = menuWidth + "px";
       menu.style.maxHeight = Math.min(224, available) + "px";
       menu.style.top = openAbove ? Math.max(8, rect.top - Math.min(preferredHeight, available) - gap) + "px" : rect.bottom + gap + "px";
     }
     function chooseSelectOption(option) {
-      const shell = option.closest(".select-shell");
+      const menu = option.closest(".select-menu");
+      const shell = menu.selectShell || option.closest(".select-shell");
       const trigger = shell.querySelector("[data-select-trigger]");
-      shell.querySelector("input[type=hidden]").value = option.dataset.value;
+      const input = shell.querySelector("input[type=hidden]");
+      input.value = option.dataset.value;
       shell.querySelector("[data-select-label]").textContent = option.textContent.trim();
-      shell.querySelectorAll("[data-select-option]").forEach(function(item) { item.setAttribute("aria-selected", String(item === option)); });
+      menu.querySelectorAll("[data-select-option]").forEach(function(item) { item.setAttribute("aria-selected", String(item === option)); });
       toggleSelectMenu(trigger, false);
       if (shell.querySelector('input[name="transport"]')) updateMcpTransport(shell.closest("form"));
+      if (input.name === "sessionProvider") {
+        state.sessionProvider = input.value;
+        const sessions = filteredSessions();
+        const selectedVisible = sessions.some(function(session) { return sessionKey(session) === state.selectedSessionKey; });
+        if (!selectedVisible) {
+          state.selectedSessionKey = sessions[0] ? sessionKey(sessions[0]) : "";
+          state.sessionTranscript = null;
+        }
+        renderSessions();
+        if (!selectedVisible && selectedSession()) loadSelectedSessionMessages();
+        return;
+      }
       trigger.focus();
     }
     function openAddSkill() {
@@ -1083,7 +1367,9 @@ export const webAppHtml = String.raw`<!doctype html>
         chooseSelectOption(option);
       } else if (event.key === "Escape") {
         event.preventDefault();
-        const selectTrigger = option.closest(".select-shell").querySelector("[data-select-trigger]");
+        const optionMenu = option.closest(".select-menu");
+        const optionShell = optionMenu.selectShell || option.closest(".select-shell");
+        const selectTrigger = optionShell.querySelector("[data-select-trigger]");
         toggleSelectMenu(selectTrigger, false);
         selectTrigger.focus();
       }
@@ -1101,7 +1387,11 @@ export const webAppHtml = String.raw`<!doctype html>
         render();
         return;
       }
-      if (target.dataset.view) { state.view = target.dataset.view; location.hash = state.view; render(); return; }
+      if (target.dataset.view) {
+        state.view = target.dataset.view; location.hash = state.view; render();
+        if (state.view === "sessions" && !state.sessionsLoaded && !state.sessionsLoading) await loadSessions();
+        return;
+      }
       if (target.dataset.close !== undefined) { target.closest("dialog").close(); return; }
       if (target.dataset.confirm !== undefined) {
         const confirmed = target.dataset.confirm === "true";
@@ -1123,6 +1413,22 @@ export const webAppHtml = String.raw`<!doctype html>
       }
       const action = target.dataset.action;
       if (action === "refresh") await load(target);
+      if (action === "refresh-sessions") await loadSessions(target);
+      if (action === "select-session") {
+        event.preventDefault();
+        state.selectedSessionKey = target.dataset.sessionKey;
+        state.sessionTranscript = null;
+        renderSelectedSession();
+        await loadSelectedSessionMessages();
+      }
+      if (action === "copy-session-dir") { const session = selectedSession(); if (session?.projectDir) await copyText(session.projectDir, "Project directory copied."); }
+      if (action === "copy-session-command") { const session = selectedSession(); if (session) await copyText(session.resumeCommand, "Resume command copied."); }
+      if (action === "resume-session") await resumeSelectedSession(target);
+      if (action === "delete-session") await deleteSelectedSession();
+      if (action === "session-toc") {
+        const message = document.getElementById("session-message-" + target.dataset.messageIndex);
+        if (message) { message.scrollIntoView({ behavior: "smooth", block: "start" }); message.classList.remove("active"); requestAnimationFrame(function() { message.classList.add("active"); }); }
+      }
       if (action === "add-skill") openAddSkill();
       if (action === "toggle-skill-agent") await toggleSkillAgent(target.dataset.name, target.dataset.tool, target.dataset.synced === "true", target);
       if (action === "edit-skill") await openEditSkill(target.dataset.name, target);
@@ -1158,6 +1464,17 @@ export const webAppHtml = String.raw`<!doctype html>
       state[kind + "SearchDraft"] = input.value;
     });
     document.addEventListener("submit", function(event) {
+      const sessionForm = event.target.closest?.("[data-session-search-form]");
+      if (sessionForm) {
+        event.preventDefault();
+        const query = String(new FormData(sessionForm).get("query") || "");
+        state.sessionSearchDraft = query;
+        state.sessionSearch = query;
+        renderSessions();
+        const next = document.querySelector("[data-session-search-form] input");
+        next?.focus(); next?.setSelectionRange(next.value.length, next.value.length);
+        return;
+      }
       const form = event.target.closest?.("[data-resource-search-form]");
       if (!form) return;
       event.preventDefault();
@@ -1190,7 +1507,11 @@ export const webAppHtml = String.raw`<!doctype html>
       state.confirmResolve = null;
     });
     document.getElementById("form-dialog").addEventListener("close", function() { closeSelectMenus(); });
-    window.addEventListener("hashchange", function() { state.view = location.hash.slice(1) || "dashboard"; render(); });
+    window.addEventListener("hashchange", function() {
+      state.view = location.hash.slice(1) || "dashboard";
+      render();
+      if (state.view === "sessions" && !state.sessionsLoaded && !state.sessionsLoading) void loadSessions();
+    });
     if (DEV) watchDevelopmentServer();
     load();
   </script>

@@ -75,7 +75,7 @@ tm web
 
 ![Tools Manager Web 管理台](docs/images/web-dashboard.png)
 
-管理台复用 CLI 的核心能力，可以管理 skills、MCP servers，执行 Agent 导入与同步，以及 Git 备份。
+管理台复用 CLI 的核心能力，可以管理 skills、MCP servers、本地 Codex 和 Claude Code 会话，执行 Agent 导入与同步，以及 Git 备份。
 
 * Skills 和 MCP 视图输入关键词后通过 Search 按钮或 Enter 执行搜索，`All` 视图还支持单项同步、多选和全选同步。
 * Agent 筛选会展示该 Agent 的完整已安装资源：受管资源保留操作，点击未受管资源名称可查看只读详情，但不能编辑、同步或删除。
@@ -83,6 +83,7 @@ tm web
 * 点击 skill 名称可以查看 source 元数据并编辑完整 `SKILL.md`。
 * 点击 MCP server 名称可以修改名称、传输方式、command 或 URL、arguments、environment、HTTP headers、目标 tools 和启用状态。
 * MCP environment 与 header 值只通过本地详情接口读取，管理台 snapshot 不会暴露这些值。
+* Sessions 支持扫描 Codex 和 Claude Code 历史会话，并提供 Provider 筛选、搜索、按需查看正文、恢复命令和带校验的删除操作。
 
 服务只监听 `127.0.0.1`。默认使用 `4343` 端口，端口被占用时会自动尝试后续本地端口。也可以指定端口或禁止自动打开浏览器：
 

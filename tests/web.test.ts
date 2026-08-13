@@ -12,6 +12,8 @@ let roots: string[] = [];
 afterEach(async () => {
   closeDb();
   delete process.env.TOOLS_MANAGER_HOME;
+  delete process.env.CODEX_HOME;
+  delete process.env.CLAUDE_CONFIG_DIR;
   await Promise.all(roots.map((root) => rm(root, { recursive: true, force: true })));
   roots = [];
 });
@@ -83,17 +85,20 @@ test("serves the web dashboard and protects mutations", async () => {
   expect(html).toContain("const DEV = false;");
   expect(html).not.toContain("Managed inventory");
   expect(html).not.toContain('data-view="agents"');
+  expect(html).toContain('data-view="sessions"');
   expect(html).not.toContain("Open agents");
   expect(html).toContain("<th>Skill paths</th><th>MCP config</th>");
   expect(html).toContain('class="agent-table"');
   expect(html).not.toContain('class="busy-status" role="status"');
   expect(html).toContain('.btn.loading::before');
+  expect(html).toContain('button.classList.contains("icon") ? "" : message || "Working..."');
   expect(html).toContain('grid-template-rows: auto minmax(0, 1fr) auto;');
   expect(html).toContain('max-width: none;');
   expect(html).toContain('max-height: calc(100dvh - 16px);');
   expect(html).toContain('max-height: calc(100dvh - 20px);');
   expect(html).toContain('[data-mcp-transport], [data-mcp-add-mode], [data-skill-add-mode] { display: grid; gap: 18px; }');
   expect(html).toContain('.dialog-body { min-height: 0;');
+  expect(html).toContain('#form-body { display: grid; align-content: start; gap: 18px; }');
   expect(html).not.toContain('#form-dialog:has(.select-shell) { overflow: visible; }');
   expect(html).toContain('position: fixed; z-index: 80;');
   expect(html).toContain('function positionSelectMenu(trigger, menu)');
@@ -160,6 +165,20 @@ test("serves the web dashboard and protects mutations", async () => {
   expect(html).toContain('.manager-path::before');
   expect(html).toContain("esc(state.data.status.root)");
   expect(html).toContain('function renderSkills()');
+  expect(html).toContain('function renderSessions()');
+  expect(html).toContain('class="select-shell session-agent-select"');
+  expect(html).toContain('class="select-menu session-agent-menu"');
+  expect(html).toContain('grid-template-columns: minmax(0, 1fr) 36px;');
+  expect(html).toContain('provider === "all" ? "All"');
+  expect(html).not.toContain('provider === "all" ? "All agents"');
+  expect(html).toContain('id="session-agent-filter"');
+  expect(html).not.toContain('class="session-provider-filter"');
+  expect(html).toContain('api("/api/session-messages?"');
+  expect(html).toContain('.session-message.user { margin-right: auto;');
+  expect(html).toContain('.session-message.assistant { margin-left: auto;');
+  expect(html).toContain('.session-toc button > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }');
+  expect(html).toContain('api("/api/sessions/resume"');
+  expect(html).toContain('api("/api/sessions/delete"');
   expect(html).toContain('view.innerHTML = \'<section>\' + sectionHead("Skill registry"');
   expect(html).not.toContain('"Store · " + data.status.skillsDir');
   expect(html).toContain('class="metric-note" title=');
@@ -172,6 +191,7 @@ test("serves the web dashboard and protects mutations", async () => {
   expect(html).toContain('data-mcp-add-mode="import" hidden');
   expect(html).toContain('class="target-tool-grid"');
   expect(html).toContain('class="target-tool-check"');
+  expect(html).toContain('selectField("Agent", "importTool", toolOptions("all"))');
   expect(html).toContain('.mcp-add-dialog #dynamic-form');
   expect(html).toContain('searchControl("mcp") + scopeSummary("mcp", resources)');
   expect(html).toContain('System MCP servers are read only');
@@ -246,6 +266,40 @@ test("exposes browser reload events only in development mode", async () => {
   expect(await page.text()).toContain("const DEV = true;");
   expect(events.headers.get("content-type")).toBe("text/event-stream");
   expect(new TextDecoder().decode(chunk.value)).toBe("data: boot-test\n\n");
+});
+
+test("lists, reads, and deletes a Codex session through the web API", async () => {
+  const managerHome = await tempRoot("tm-web-home-");
+  const codexHome = await tempRoot("tm-web-codex-");
+  process.env.TOOLS_MANAGER_HOME = managerHome;
+  process.env.CODEX_HOME = codexHome;
+  const sessionId = "019ff054-ef79-7250-a034-4eced14ac180";
+  const sessionDir = join(codexHome, "sessions", "2026", "08", "11");
+  const sourcePath = join(sessionDir, `rollout-${sessionId}.jsonl`);
+  await mkdir(sessionDir, { recursive: true });
+  await writeFile(sourcePath, [
+    JSON.stringify({ timestamp: "2026-08-11T10:00:00Z", type: "session_meta", payload: { id: sessionId, cwd: "/tmp/web-session" } }),
+    JSON.stringify({ timestamp: "2026-08-11T10:01:00Z", type: "response_item", payload: { type: "message", role: "user", content: [{ type: "input_text", text: "Web session message" }] } }),
+  ].join("\n") + "\n");
+  await initManager();
+  const handler = createWebHandler("test-token");
+  const headers = { "content-type": "application/json", "x-tm-token": "test-token", origin: "http://127.0.0.1:4343" };
+
+  const list = await handler(new Request("http://127.0.0.1:4343/api/sessions"));
+  const query = new URLSearchParams({ provider: "codex", sessionId, sourcePath });
+  const messages = await handler(new Request(`http://127.0.0.1:4343/api/session-messages?${query}`));
+  const deleted = await handler(new Request("http://127.0.0.1:4343/api/sessions/delete", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ provider: "codex", sessionId, sourcePath }),
+  }));
+  const afterDelete = await handler(new Request("http://127.0.0.1:4343/api/sessions"));
+
+  expect(list.status).toBe(200);
+  expect((await list.json() as { sessions: Array<{ sessionId: string }> }).sessions.map((session) => session.sessionId)).toEqual([sessionId]);
+  expect((await messages.json() as { messages: Array<{ content: string }> }).messages[0]?.content).toBe("Web session message");
+  expect(deleted.status).toBe(200);
+  expect((await afterDelete.json() as { sessions: unknown[] }).sessions).toEqual([]);
 });
 
 test("imports, inspects, and removes a skill through the web API", async () => {
