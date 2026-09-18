@@ -68,6 +68,8 @@ test("classifies user and system Agent skills by location", async () => {
     projectSkillsDir: ".codex/skills",
     mcpKind: "codex-toml",
     mcpPath: join(root, "config.toml"),
+    hookKind: "codex-notify",
+    hookPath: join(root, "config.toml"),
   };
 
   const skills = (await listAgentSkills("codex", [tool]))[0]!.skills;

@@ -201,6 +201,28 @@ export const webAppHtml = String.raw`<!doctype html>
     .empty strong { display: block; font-size: 15px; }
     .empty span { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; }
     .command { max-width: 420px; padding: 8px 10px; background: #edf0e9; border-left: 3px solid var(--blue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 10px/1.3 var(--mono); }
+    .hook-agent-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .hook-agent-button { min-height: 42px; display: inline-flex; align-items: center; gap: 9px; padding: 8px 12px; border: 1px solid var(--line-strong); background: var(--panel); color: var(--muted); font: 700 10px/1 var(--mono); }
+    .hook-agent-button:hover { color: var(--ink); background: white; }
+    .hook-agent-button[aria-pressed="true"] { border-color: var(--ink); background: var(--graphite); color: white; box-shadow: inset 0 -3px 0 var(--accent); }
+    .hook-agent-button .agent-glyph { width: 20px; height: 20px; }
+    .hook-event-button { padding: 0; border: 0; background: transparent; color: var(--ink); font: 700 12px/1.25 var(--mono); text-align: left; }
+    .hook-event-button:hover { color: var(--blue); text-decoration: underline; text-underline-offset: 3px; }
+    .hook-count { display: inline-flex; align-items: center; gap: 7px; font: 700 10px/1 var(--mono); }
+    .hook-count::before { content: ""; width: 7px; height: 7px; border: 1px solid #9da69f; background: transparent; }
+    .hook-count.installed::before { border-color: #739219; background: var(--accent); }
+    .hook-count.partial::before { border-color: #c9851c; background: #ffd379; }
+    .hook-detail-list { display: grid; gap: 10px; margin-bottom: 18px; }
+    .hook-handler { padding: 13px; border: 1px solid var(--line); background: #f4f6f1; }
+    .hook-handler-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .hook-handler-source { min-width: 0; font: 700 10px/1.3 var(--mono); overflow-wrap: anywhere; }
+    .hook-handler-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+    .hook-handler-command { margin-top: 9px; padding: 8px 9px; background: #e9ede6; font: 9px/1.5 var(--mono); overflow-wrap: anywhere; }
+    .hook-toggle { width: 38px; height: 22px; flex: 0 0 38px; padding: 2px; border: 1px solid #89928d; border-radius: 11px; background: #d9ddd7; }
+    .hook-toggle::after { content: ""; display: block; width: 16px; height: 16px; border-radius: 50%; background: white; box-shadow: 1px 2px 4px rgba(16,21,19,.2); transition: transform .15s ease-out; }
+    .hook-toggle[aria-pressed="true"] { border-color: #688316; background: var(--accent); }
+    .hook-toggle[aria-pressed="true"]::after { transform: translateX(16px); background: var(--ink); }
+    .hook-toggle:disabled { cursor: not-allowed; opacity: .45; }
     dialog {
       width: min(620px, calc(100vw - 28px)); max-width: none; max-height: calc(100vh - 36px); max-height: calc(100dvh - 36px); padding: 0;
       overflow: hidden; border: 1px solid #747e78; border-top: 4px solid var(--accent); border-radius: var(--radius);
@@ -404,6 +426,7 @@ export const webAppHtml = String.raw`<!doctype html>
       .metric { min-height: 110px; }
       .content.sessions-content { height: auto; min-height: calc(100vh - 154px); padding: 14px; }
       .session-shell { min-height: calc(100vh - 182px); grid-template-columns: 270px minmax(0, 1fr); }
+      .hook-agent-bar { overflow-x: auto; }
       .session-body { grid-template-columns: minmax(0, 1fr); }
       .session-toc { display: none; }
     }
@@ -462,7 +485,8 @@ export const webAppHtml = String.raw`<!doctype html>
         <button data-view="dashboard"><span class="nav-code">01</span><span>Dashboard</span></button>
         <button data-view="skills"><span class="nav-code">02</span><span>Skills</span></button>
         <button data-view="mcp"><span class="nav-code">03</span><span>MCP Servers</span></button>
-        <button data-view="sessions"><span class="nav-code">04</span><span>Sessions</span></button>
+        <button data-view="hooks"><span class="nav-code">04</span><span>Hooks</span></button>
+        <button data-view="sessions"><span class="nav-code">05</span><span>Sessions</span></button>
       </nav>
       <div class="sidebar-foot"><div class="connection-line"><span class="status-pulse"></span><span>LOCAL SESSION</span></div><div id="server-address"></div></div>
     </aside>
@@ -481,7 +505,7 @@ export const webAppHtml = String.raw`<!doctype html>
     const DEV = __TM_DEV__;
     const TOOLS = ["all", "codex", "claude_code", "cursor", "opencode"];
     const state = {
-      data: null, view: location.hash.slice(1) || "dashboard", skillFilter: "all", mcpFilter: "all",
+      data: null, view: location.hash.slice(1) || "dashboard", skillFilter: "all", mcpFilter: "all", hookFilter: "codex",
       skillSearch: "", mcpSearch: "", skillSearchDraft: "", mcpSearchDraft: "", formHandler: null, confirmResolve: null,
       sessions: [], sessionsLoaded: false, sessionsLoading: false, sessionProvider: "all", sessionSearch: "", sessionSearchDraft: "",
       selectedSessionKey: "", sessionTranscript: null, sessionMessagesLoading: false
@@ -490,6 +514,7 @@ export const webAppHtml = String.raw`<!doctype html>
       dashboard: ["Workspace overview", "Dashboard"],
       skills: ["Managed resources", "Skills"],
       mcp: ["Managed integrations", "MCP Servers"],
+      hooks: ["Agent automation", "Hooks"],
       sessions: ["Local conversation history", "Sessions"]
     };
 
@@ -653,6 +678,7 @@ export const webAppHtml = String.raw`<!doctype html>
       if (state.view === "dashboard") renderDashboard();
       if (state.view === "skills") renderSkills();
       if (state.view === "mcp") renderMcp();
+      if (state.view === "hooks") renderHooks();
       if (state.view === "sessions") renderSessions();
       view.classList.toggle("sessions-content", state.view === "sessions");
       view.classList.remove("view-enter");
@@ -916,6 +942,22 @@ export const webAppHtml = String.raw`<!doctype html>
       const controls = '<div class="resource-controls">' + filterStrip("mcp") + '<div class="resource-action-row' + (state.mcpFilter === "all" ? '' : ' agent-skill-row') + '">' + actionRow + '</div></div>';
       view.innerHTML = '<section>' + sectionHead("MCP registry", resourceSummary("mcp", resources, servers), "") + controls + table + '</section>';
     }
+    function renderHooks() {
+      let hook = state.data.hooks.find(function(item) { return item.tool === state.hookFilter; });
+      if (!hook) { hook = state.data.hooks[0]; state.hookFilter = hook ? hook.tool : "codex"; }
+      const agents = state.data.hooks.map(function(item) {
+        return '<button class="hook-agent-button" data-action="filter-hooks" data-tool="' + esc(item.tool) + '" aria-pressed="' + (item.tool === state.hookFilter) + '"><span class="agent-glyph ' + esc(item.tool) + '">' + toolIcon(item.tool) + '</span><span>' + esc(item.displayName) + '</span></button>';
+      }).join("");
+      if (!hook) { view.innerHTML = empty("No Agents", "No hook providers were detected."); return; }
+      const rows = hook.events.map(function(event) {
+        const installedClass = event.installed ? " installed" : "";
+        const activeClass = event.active && event.active < event.installed ? " partial" : event.active ? " installed" : "";
+        return '<tr><td><button class="hook-event-button" data-action="edit-hooks" data-tool="' + esc(hook.tool) + '" data-event="' + esc(event.name) + '">' + esc(event.name) + '</button></td>' +
+          '<td><span class="hook-count' + installedClass + '">' + event.installed + '</span></td><td><span class="hook-count' + activeClass + '">' + event.active + '</span></td><td class="muted">' + esc(event.description) + '</td></tr>';
+      }).join("");
+      const table = rows ? '<div class="table-wrap"><table><thead><tr><th>Event</th><th>Installed</th><th>Active</th><th>Description</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : empty("Plugin based hooks", "OpenCode hooks are implemented in plugin code and are read only here.");
+      view.innerHTML = '<section>' + sectionHead(hook.displayName + " hooks", hook.eventCount + " events configured · " + hook.commandCount + " handlers", "") + '<div class="hook-agent-bar" role="group" aria-label="Select Agent">' + agents + '</div>' + table + '</section>';
+    }
     function agentTable(agents) {
       const tools = state.data.status.tools;
       const syncedSkillNames = new Set(state.data.skills.map(function(skill) { return skill.name; }));
@@ -948,6 +990,26 @@ export const webAppHtml = String.raw`<!doctype html>
       requestAnimationFrame(function() {
         document.querySelector("#form-body input:not([type=hidden]), #form-body [data-select-trigger], #form-body textarea")?.focus();
       });
+    }
+    async function openEditHooks(tool, eventName, button) {
+      setButtonLoading(button, true, "Loading...");
+      try {
+        const endpoint = "/api/hooks/" + encodeURIComponent(tool) + "/" + encodeURIComponent(eventName);
+        const payload = await api(endpoint);
+        const hook = payload.hook;
+        const handlers = hook.event.handlers.map(function(handler) {
+          const status = handler.trusted ? (handler.enabled ? "Active" : "Disabled") : "Needs review";
+          const toggle = handler.scope === "plugin" ? '<button type="button" class="hook-toggle" data-action="toggle-hook-state" data-state-id="' + esc(handler.id) + '" data-enabled="' + handler.enabled + '" aria-pressed="' + handler.enabled + '" aria-label="' + (handler.enabled ? 'Disable' : 'Enable') + ' hook" title="' + (handler.trusted ? (handler.enabled ? 'Disable hook' : 'Enable hook') : 'Review this hook in Codex /hooks first') + '"' + (handler.trusted ? '' : ' disabled') + '></button>' : '';
+          return '<div class="hook-handler"><div class="hook-handler-head"><div class="hook-handler-source">' + esc(handler.source) + '</div>' + toggle + '</div><div class="hook-handler-meta"><span class="tag">' + esc(handler.scope) + '</span><span class="tag">' + esc(handler.type) + '</span><span class="tag ' + (handler.enabled ? 'green' : 'amber') + '">' + esc(status) + '</span><span class="tag">Matcher: ' + esc(handler.matcher) + '</span></div>' + (handler.command ? '<div class="hook-handler-command">' + esc(handler.command) + '</div>' : '') + '</div>';
+        }).join("") || '<div class="muted">No handlers installed for this event.</div>';
+        const editor = hook.editable ? textareaField("User handlers (JSON array)", "content", hook.content, "[]", "source-editor") : '';
+        const body = '<dl class="detail-meta"><dt>Agent</dt><dd>' + esc(hook.displayName) + '</dd><dt>Event</dt><dd class="mono">' + esc(hook.event.name) + '</dd><dt>Config</dt><dd class="mono">' + esc(hook.path) + '</dd></dl><div class="hook-detail-list">' + handlers + '</div>' + editor;
+        openForm(hook.event.name, body, hook.editable ? "Save" : "Close", async function(form) {
+          if (hook.editable) await api(endpoint, { method: "PUT", body: JSON.stringify({ content: form.get("content") }) });
+          return hook.editable ? "Updated " + hook.event.name + "." : "";
+        });
+      } catch (error) { toast(error.message, true); }
+      finally { setButtonLoading(button, false); }
     }
     function field(label, name, value, placeholder, type) {
       return '<div class="field"><label for="field-' + name + '">' + esc(label) + '</label><input id="field-' + name + '" name="' + name + '" type="' + (type || 'text') + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '" required></div>';
@@ -1387,6 +1449,11 @@ export const webAppHtml = String.raw`<!doctype html>
         render();
         return;
       }
+      if (target.dataset.action === "filter-hooks") {
+        state.hookFilter = target.dataset.tool;
+        renderHooks();
+        return;
+      }
       if (target.dataset.view) {
         state.view = target.dataset.view; location.hash = state.view; render();
         if (state.view === "sessions" && !state.sessionsLoaded && !state.sessionsLoading) await loadSessions();
@@ -1435,6 +1502,20 @@ export const webAppHtml = String.raw`<!doctype html>
       if (action === "view-agent-skill") await openAgentSkill(target.dataset.tool, target.dataset.name, target);
       if (action === "delete-skill") await removeSkillAction(target.dataset.name, target.dataset.tool, target);
       if (action === "add-mcp") openAddMcp();
+      if (action === "edit-hooks") await openEditHooks(target.dataset.tool, target.dataset.event, target);
+      if (action === "toggle-hook-state") {
+        const enabled = target.dataset.enabled !== "true";
+        target.disabled = true;
+        try {
+          await api("/api/hooks/codex/state", { method: "POST", body: JSON.stringify({ stateId: target.dataset.stateId, enabled: enabled }) });
+          target.dataset.enabled = String(enabled);
+          target.setAttribute("aria-pressed", String(enabled));
+          target.setAttribute("aria-label", enabled ? "Disable hook" : "Enable hook");
+          state.data = await api("/api/snapshot");
+          toast(enabled ? "Hook enabled." : "Hook disabled.");
+        } catch (error) { toast(error.message, true); }
+        finally { target.disabled = false; }
+      }
       if (action === "edit-mcp") await openEditMcp(target.dataset.name, target);
       if (action === "view-agent-mcp") openAgentMcp(target.dataset.tool, target.dataset.name);
       if (action === "toggle-mcp-agent") await toggleMcpAgent(target.dataset.name, target.dataset.tool, target.dataset.synced === "true", target);

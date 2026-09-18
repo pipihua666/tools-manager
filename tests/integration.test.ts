@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
+import { Database } from "bun:sqlite";
 import { lstat, mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -24,6 +25,26 @@ async function tempRoot(prefix: string): Promise<string> {
   roots.push(dir);
   return dir;
 }
+
+test("removes legacy preset tables during migration", async () => {
+  const managerHome = await tempRoot("tm-home-");
+  process.env.TOOLS_MANAGER_HOME = managerHome;
+  const legacy = new Database(join(managerHome, "tools-manager.db"), { create: true });
+  legacy.exec(`
+    CREATE TABLE presets (id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE);
+    CREATE TABLE preset_skills (preset_id INTEGER NOT NULL, skill_id INTEGER NOT NULL);
+    INSERT INTO presets (name) VALUES ('Legacy');
+  `);
+  legacy.close();
+
+  await initManager();
+  const migrated = new Database(join(managerHome, "tools-manager.db"), { readonly: true });
+  const tables = migrated.query("SELECT name FROM sqlite_master WHERE type = 'table'").all() as Array<{ name: string }>;
+  migrated.close();
+
+  expect(tables.map((table) => table.name)).not.toContain("presets");
+  expect(tables.map((table) => table.name)).not.toContain("preset_skills");
+});
 
 test("initializes and adds a local skill to the managed registry", async () => {
   const managerHome = await tempRoot("tm-home-");
@@ -337,5 +358,7 @@ function fakeTool(key: ToolAdapter["key"], displayName: string, skillsDir: strin
     projectSkillsDir: ".skills",
     mcpKind: "codex-toml",
     mcpPath: join(skillsDir, "config.toml"),
+    hookKind: "codex-notify",
+    hookPath: join(skillsDir, "config.toml"),
   };
 }

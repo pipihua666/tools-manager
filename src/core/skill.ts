@@ -8,6 +8,7 @@ import { cloneGitSource, isGitSource, parseGitSource } from "./git";
 import { readConfig } from "./config";
 import { assertUsage, UsageError } from "./errors";
 import { getTool, getToolSkillLocations, getToolSkillsDirs, resolveTools, toolAdapters, type ToolAdapter } from "./tools";
+import { findSystemSkillNames } from "./system-skill";
 
 export type SyncMode = "symlink" | "copy";
 
@@ -77,18 +78,25 @@ async function walk(dir: string, candidates: SkillCandidate[]): Promise<void> {
   }
 }
 
-export async function addSkill(source: string): Promise<SkillRow> {
-  const skills = await addSkills(source);
+export async function addSkill(source: string, options: { tools?: ToolAdapter[] } = {}): Promise<SkillRow> {
+  const skills = await addSkills(source, options);
   return skills[0]!;
 }
 
-export async function addSkills(source: string): Promise<SkillRow[]> {
+export async function addSkills(source: string, options: { tools?: ToolAdapter[] } = {}): Promise<SkillRow[]> {
   await ensureDir(paths().skillsDir);
   const resolved = isGitSource(source) ? await resolveGitImport(source) : await resolveLocalImport(source);
   const candidates = await findSkillCandidates(resolved.root);
   assertUsage(candidates.length > 0, `No skill found in ${resolved.root}. Expected SKILL.md or skill.md.`);
+  const systemSkillNames = await findSystemSkillNames(options.tools || toolAdapters);
   const imported: SkillRow[] = [];
-  for (const candidate of candidates) imported.push(await importCandidate(candidate, resolved.importSource));
+  for (const candidate of candidates) {
+    const metadata = await readSkillMetadata(candidate.skillFile);
+    const name = slug(metadata.name || basename(candidate.dir));
+    if (systemSkillNames.has(name)) continue;
+    imported.push(await importCandidate(candidate, resolved.importSource));
+  }
+  assertUsage(imported.length > 0, "No importable skills found. System skills are read-only and cannot be added to the managed store.");
   return imported;
 }
 

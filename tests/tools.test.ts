@@ -24,6 +24,8 @@ async function adapter(overrides: Partial<ToolAdapter> = {}): Promise<ToolAdapte
     projectSkillsDir: ".test/skills",
     mcpKind: "cursor-json",
     mcpPath: join(root, "mcp.json"),
+    hookKind: "cursor-json",
+    hookPath: join(root, "hooks.json"),
     ...overrides,
   };
 }

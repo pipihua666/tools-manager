@@ -14,6 +14,8 @@ export type ToolAdapter = {
   projectSkillsDir: string;
   mcpKind: "codex-toml" | "claude-json" | "cursor-json" | "opencode-json";
   mcpPath: string;
+  hookKind: "codex-hooks" | "codex-notify" | "claude-json" | "cursor-json" | "opencode-plugin";
+  hookPath: string;
   installCommands?: string[];
   installPaths?: string[];
 };
@@ -29,6 +31,8 @@ export const toolAdapters: ToolAdapter[] = [
     projectSkillsDir: ".codex/skills",
     mcpKind: "codex-toml",
     mcpPath: join(homedir(), ".codex", "config.toml"),
+    hookKind: "codex-hooks",
+    hookPath: join(homedir(), ".codex", "hooks.json"),
     installCommands: ["codex"],
     installPaths: ["/Applications/Codex.app"],
   },
@@ -41,6 +45,8 @@ export const toolAdapters: ToolAdapter[] = [
     projectSkillsDir: ".claude/skills",
     mcpKind: "claude-json",
     mcpPath: join(homedir(), ".claude", "mcp.json"),
+    hookKind: "claude-json",
+    hookPath: join(homedir(), ".claude", "settings.json"),
     installCommands: ["claude"],
   },
   {
@@ -51,6 +57,8 @@ export const toolAdapters: ToolAdapter[] = [
     projectSkillsDir: ".cursor/skills",
     mcpKind: "cursor-json",
     mcpPath: join(homedir(), ".cursor", "mcp.json"),
+    hookKind: "cursor-json",
+    hookPath: join(homedir(), ".cursor", "hooks.json"),
     installCommands: ["cursor"],
     installPaths: ["/Applications/Cursor.app"],
   },
@@ -62,6 +70,8 @@ export const toolAdapters: ToolAdapter[] = [
     projectSkillsDir: ".opencode/skills",
     mcpKind: "opencode-json",
     mcpPath: join(homedir(), ".config", "opencode", "opencode.json"),
+    hookKind: "opencode-plugin",
+    hookPath: join(homedir(), ".config", "opencode", "plugins"),
     installCommands: ["opencode"],
     installPaths: ["/Applications/OpenCode.app"],
   },

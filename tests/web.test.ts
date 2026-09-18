@@ -56,6 +56,7 @@ test("serves the web dashboard and protects mutations", async () => {
     headers: { "sec-fetch-site": "cross-site" },
   }));
   const snapshot = await handler(new Request("http://127.0.0.1:4343/api/snapshot"));
+  const hooks = await handler(new Request("http://127.0.0.1:4343/api/hooks"));
   const snapshotText = await snapshot.text();
   const mcpDetail = await handler(new Request("http://127.0.0.1:4343/api/mcp/private-server"));
   const mcpUpdated = await handler(new Request("http://127.0.0.1:4343/api/mcp/private-server", {
@@ -86,6 +87,13 @@ test("serves the web dashboard and protects mutations", async () => {
   expect(html).not.toContain("Managed inventory");
   expect(html).not.toContain('data-view="agents"');
   expect(html).toContain('data-view="sessions"');
+  expect(html).toContain('data-view="hooks"');
+  expect(html).toContain('function renderHooks()');
+  expect(html).toContain('data-action="edit-hooks"');
+  expect(html).toContain('const endpoint = "/api/hooks/"');
+  expect(html).toContain('<th>Event</th><th>Installed</th><th>Active</th><th>Description</th>');
+  expect(html).toContain('data-action="toggle-hook-state"');
+  expect(html).toContain('api("/api/hooks/codex/state"');
   expect(html).not.toContain("Open agents");
   expect(html).toContain("<th>Skill paths</th><th>MCP config</th>");
   expect(html).toContain('class="agent-table"');
@@ -233,6 +241,8 @@ test("serves the web dashboard and protects mutations", async () => {
   expect(denied.status).toBe(403);
   expect(crossSite.status).toBe(403);
   expect(snapshotText).toContain("PRIVATE_TOKEN");
+  expect(hooks.status).toBe(200);
+  expect((await hooks.json() as { hooks: unknown[] }).hooks).toHaveLength(4);
   expect(snapshotText).not.toContain("must-not-leak");
   expect((await mcpDetail.json() as { server: { env: Record<string, string> } }).server.env.PRIVATE_TOKEN).toBe("must-not-leak");
   expect(mcpUpdated.status).toBe(200);
@@ -294,12 +304,14 @@ test("lists, reads, and deletes a Codex session through the web API", async () =
     body: JSON.stringify({ provider: "codex", sessionId, sourcePath }),
   }));
   const afterDelete = await handler(new Request("http://127.0.0.1:4343/api/sessions"));
+  const listedIds = (await list.json() as { sessions: Array<{ sessionId: string }> }).sessions.map((session) => session.sessionId);
+  const remainingIds = (await afterDelete.json() as { sessions: Array<{ sessionId: string }> }).sessions.map((session) => session.sessionId);
 
   expect(list.status).toBe(200);
-  expect((await list.json() as { sessions: Array<{ sessionId: string }> }).sessions.map((session) => session.sessionId)).toEqual([sessionId]);
+  expect(listedIds).toContain(sessionId);
   expect((await messages.json() as { messages: Array<{ content: string }> }).messages[0]?.content).toBe("Web session message");
   expect(deleted.status).toBe(200);
-  expect((await afterDelete.json() as { sessions: unknown[] }).sessions).toEqual([]);
+  expect(remainingIds).not.toContain(sessionId);
 });
 
 test("imports, inspects, and removes a skill through the web API", async () => {

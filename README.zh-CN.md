@@ -83,6 +83,7 @@ tm web
 * 点击 skill 名称可以查看 source 元数据并编辑完整 `SKILL.md`。
 * 点击 MCP server 名称可以修改名称、传输方式、command 或 URL、arguments、environment、HTTP headers、目标 tools 和启用状态。
 * MCP environment 与 header 值只通过本地详情接口读取，管理台 snapshot 不会暴露这些值。
+* Hooks 页面按 Agent 和生命周期事件展示已安装/已启用的 handler；可编辑 Codex 用户 hooks、Claude Code hooks 与 Cursor hooks，也可启停已由 Codex 审查信任的插件 hook，插件定义和 OpenCode 插件事件保持只读。
 * Sessions 支持扫描 Codex 和 Claude Code 历史会话，并提供 Provider 筛选、搜索、按需查看正文、恢复命令和带校验的删除操作。
 
 服务只监听 `127.0.0.1`。默认使用 `4343` 端口，端口被占用时会自动尝试后续本地端口。也可以指定端口或禁止自动打开浏览器：

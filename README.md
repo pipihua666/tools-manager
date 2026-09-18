@@ -83,6 +83,7 @@ The dashboard manages skills, MCP servers, local Codex and Claude Code sessions,
 * Click a skill name to inspect its source metadata and edit the complete `SKILL.md`.
 * Click an MCP server name to edit its name, transport, command or URL, arguments, environment, HTTP headers, target tools, and enabled state.
 * MCP environment and header values are available only through the local detail endpoint and are omitted from the dashboard snapshot.
+* Hooks provides an event-level view for each Agent, including installed and active handler counts. Codex user hooks, Claude Code hooks, and Cursor hooks are editable; trusted Codex plugin hooks can be enabled or disabled, while plugin definitions and OpenCode plugin events remain read only.
 * Sessions scans Codex and Claude Code history, with provider filters, search, on-demand transcripts, resume commands, and guarded deletion.
 
 The server binds to `127.0.0.1` only. It uses port `4343` by default and tries the next available local port when needed. To select a port or avoid opening a browser automatically:

@@ -50,6 +50,9 @@ export function closeDb(): void {
 
 function migrate(db: Database): void {
   db.exec(`
+    DROP TABLE IF EXISTS preset_skills;
+    DROP TABLE IF EXISTS presets;
+
     CREATE TABLE IF NOT EXISTS skills (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,

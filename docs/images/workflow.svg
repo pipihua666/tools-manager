@@ -19,7 +19,7 @@
   </defs>
 
   <text x="42" y="58" class="title">Tools Manager Workflow</text>
-  <text x="44" y="86" class="text">One local source of truth for skills, skill presets, and MCP configuration.</text>
+  <text x="44" y="86" class="text">One local source of truth for skills and MCP configuration.</text>
 
   <rect class="box" x="42" y="135" width="250" height="130"/>
   <text x="66" y="168" class="label">Local Agents</text>
@@ -36,9 +36,9 @@
 
   <rect class="box" x="808" y="135" width="250" height="130"/>
   <text x="832" y="168" class="label">Skill Sync</text>
-  <text x="832" y="197" class="text">Default / Work presets</text>
+  <text x="832" y="197" class="text">selected managed skills</text>
   <text x="832" y="219" class="text">agent skill directories</text>
-  <text x="832" y="246" class="cmd">tm skills sync</text>
+  <text x="832" y="246" class="cmd">tm skills sync-selected</text>
 
   <path class="accent" d="M292 200 C345 200 365 200 424 200"/>
   <path class="accent" d="M686 200 C740 200 760 200 807 200"/>

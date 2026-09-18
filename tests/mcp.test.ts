@@ -242,6 +242,8 @@ test("syncs one MCP server without writing other managed servers", async () => {
     projectSkillsDir: ".cursor/skills",
     mcpKind: "cursor-json",
     mcpPath,
+    hookKind: "cursor-json",
+    hookPath: join(agentRoot, "hooks.json"),
   };
   await writeFile(mcpPath, '{"mcpServers":{"existing":{"command":"node","args":["existing.js"]}}}');
   await addMcpServer({ ...server, targetTools: ["cursor"] });
@@ -267,6 +269,8 @@ test("removes one MCP server from a selected Agent configuration", async () => {
     projectSkillsDir: ".cursor/skills",
     mcpKind: "cursor-json",
     mcpPath,
+    hookKind: "cursor-json",
+    hookPath: join(agentRoot, "hooks.json"),
   };
   await writeFile(mcpPath, '{"theme":"dark","mcpServers":{"playwright":{"command":"npx"},"other":{"command":"node"}}}');
 
@@ -282,7 +286,7 @@ test("removes one MCP server from a selected Agent configuration", async () => {
 
 test("classifies Codex-injected MCP servers as system scope", () => {
   const codex: ToolAdapter = {
-    key: "codex", displayName: "Codex", detectPath: "", skillsDir: "", projectSkillsDir: "", mcpKind: "codex-toml", mcpPath: "",
+    key: "codex", displayName: "Codex", detectPath: "", skillsDir: "", projectSkillsDir: "", mcpKind: "codex-toml", mcpPath: "", hookKind: "codex-notify", hookPath: "",
   };
   expect(classifyMcpScope(codex, { ...server, name: "node_repl", command: "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl" })).toBe("system");
   expect(classifyMcpScope(codex, { ...server, name: "computer-use", command: "./Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient" })).toBe("system");
@@ -294,6 +298,7 @@ test("refuses to remove a system MCP server from an Agent configuration", async 
   const mcpPath = join(agentRoot, "config.toml");
   const tool: ToolAdapter = {
     key: "codex", displayName: "Codex", detectPath: agentRoot, skillsDir: join(agentRoot, "skills"), projectSkillsDir: ".codex/skills", mcpKind: "codex-toml", mcpPath,
+    hookKind: "codex-notify", hookPath: mcpPath,
   };
   const original = '[mcp_servers.node_repl]\ncommand = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"\n';
   await writeFile(mcpPath, original);

@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1164" height="812" viewBox="0 0 1164 812">
-  <rect width="1164" height="812" fill="#e9edf5"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1164" height="728" viewBox="0 0 1164 728">
+  <rect width="1164" height="728" fill="#e9edf5"/>
   <style>
     .mono{font-family:"SFMono-Regular","Menlo","Consolas",monospace}
     .muted{fill:#5f6268}
@@ -12,7 +12,7 @@
 
   <rect x="16" y="27" width="791" height="64" rx="5" fill="none" stroke="#a7adb8" stroke-width="1.5"/>
   <text x="31" y="55" class="mono green" font-size="18">Tools Manager</text>
-  <text x="31" y="76" class="mono muted" font-size="18">One local control plane for skills, presets, and MCP servers.</text>
+  <text x="31" y="76" class="mono muted" font-size="18">One local control plane for skills and MCP servers.</text>
   <text x="11" y="139" class="mono muted" font-size="18">↑/↓ choose  Enter run  Esc deselect  q quit</text>
 
   <text x="11" y="202" class="mono amber" font-size="18">SYSTEM</text>
@@ -46,40 +46,32 @@
   <text x="281" y="454" class="mono muted" font-size="18">Choose one or more skills for an agent.</text>
   <text x="732" y="454" class="mono muted" font-size="18">tm skills sync-selected</text>
 
-  <text x="11" y="496" class="mono amber" font-size="18">SKILL PRESETS</text>
-  <text x="31" y="517" class="mono muted" font-size="18">List skill presets</text>
-  <text x="281" y="517" class="mono muted" font-size="18">Show skill groups.</text>
-  <text x="732" y="517" class="mono muted" font-size="18">tm presets list</text>
-  <text x="31" y="538" class="mono muted" font-size="18">Apply skill preset</text>
-  <text x="281" y="538" class="mono muted" font-size="18">Apply one skill group to agents.</text>
-  <text x="732" y="538" class="mono muted" font-size="18">tm presets apply</text>
+  <text x="11" y="496" class="mono amber" font-size="18">MCP</text>
+  <text x="31" y="517" class="mono muted" font-size="18">Add MCP server</text>
+  <text x="281" y="517" class="mono muted" font-size="18">Register command, args, env, and tools.</text>
+  <text x="732" y="517" class="mono muted" font-size="18">tm mcp add --command --arg --env --tool</text>
+  <text x="31" y="538" class="mono muted" font-size="18">Import MCP from agents</text>
+  <text x="281" y="538" class="mono muted" font-size="18">Choose an agent, defaulting to all.</text>
+  <text x="732" y="538" class="mono muted" font-size="18">tm mcp add --tool</text>
+  <text x="31" y="559" class="mono muted" font-size="18">List MCP servers</text>
+  <text x="281" y="559" class="mono muted" font-size="18">Browse the managed MCP registry.</text>
+  <text x="732" y="559" class="mono muted" font-size="18">tm mcp list</text>
+  <text x="31" y="580" class="mono muted" font-size="18">Show MCP server</text>
+  <text x="281" y="580" class="mono muted" font-size="18">Inspect one MCP server.</text>
+  <text x="732" y="580" class="mono muted" font-size="18">tm mcp show</text>
+  <text x="31" y="601" class="mono muted" font-size="18">Remove MCP server</text>
+  <text x="281" y="601" class="mono muted" font-size="18">Delete from tm; sync to update agents.</text>
+  <text x="732" y="601" class="mono muted" font-size="18">tm mcp remove</text>
+  <text x="31" y="622" class="mono muted" font-size="18">Sync selected MCP</text>
+  <text x="281" y="622" class="mono muted" font-size="18">Choose one or more servers for an agent.</text>
+  <text x="732" y="622" class="mono muted" font-size="18">tm mcp sync-selected</text>
 
-  <text x="11" y="580" class="mono amber" font-size="18">MCP</text>
-  <text x="31" y="601" class="mono muted" font-size="18">Add MCP server</text>
-  <text x="281" y="601" class="mono muted" font-size="18">Register command, args, env, and tools.</text>
-  <text x="732" y="601" class="mono muted" font-size="18">tm mcp add --command --arg --env --tool</text>
-  <text x="31" y="622" class="mono muted" font-size="18">Import MCP from agents</text>
-  <text x="281" y="622" class="mono muted" font-size="18">Choose an agent, defaulting to all.</text>
-  <text x="732" y="622" class="mono muted" font-size="18">tm mcp add --tool</text>
-  <text x="31" y="643" class="mono muted" font-size="18">List MCP servers</text>
-  <text x="281" y="643" class="mono muted" font-size="18">Browse the managed MCP registry.</text>
-  <text x="732" y="643" class="mono muted" font-size="18">tm mcp list</text>
-  <text x="31" y="664" class="mono muted" font-size="18">Show MCP server</text>
-  <text x="281" y="664" class="mono muted" font-size="18">Inspect one MCP server.</text>
-  <text x="732" y="664" class="mono muted" font-size="18">tm mcp show</text>
-  <text x="31" y="685" class="mono muted" font-size="18">Remove MCP server</text>
-  <text x="281" y="685" class="mono muted" font-size="18">Delete from tm; sync to update agents.</text>
-  <text x="732" y="685" class="mono muted" font-size="18">tm mcp remove</text>
-  <text x="31" y="706" class="mono muted" font-size="18">Sync selected MCP</text>
-  <text x="281" y="706" class="mono muted" font-size="18">Choose one or more servers for an agent.</text>
-  <text x="732" y="706" class="mono muted" font-size="18">tm mcp sync-selected</text>
-
-  <text x="11" y="748" class="mono amber" font-size="18">SYSTEM</text>
-  <text x="31" y="769" class="mono muted" font-size="18">Backup skills</text>
-  <text x="281" y="769" class="mono muted" font-size="18">Commit managed skills with Git.</text>
-  <text x="732" y="769" class="mono muted" font-size="18">tm backup</text>
-  <text x="31" y="790" class="mono muted" font-size="18">Help</text>
-  <text x="281" y="790" class="mono muted" font-size="18">Print command reference.</text>
-  <text x="732" y="790" class="mono muted" font-size="18">tm --help</text>
-  <rect x="11" y="794" width="10" height="18" fill="#ff7f5a"/>
+  <text x="11" y="664" class="mono amber" font-size="18">SYSTEM</text>
+  <text x="31" y="685" class="mono muted" font-size="18">Backup skills</text>
+  <text x="281" y="685" class="mono muted" font-size="18">Commit managed skills with Git.</text>
+  <text x="732" y="685" class="mono muted" font-size="18">tm backup</text>
+  <text x="31" y="706" class="mono muted" font-size="18">Help</text>
+  <text x="281" y="706" class="mono muted" font-size="18">Print command reference.</text>
+  <text x="732" y="706" class="mono muted" font-size="18">tm --help</text>
+  <rect x="11" y="710" width="10" height="18" fill="#ff7f5a"/>
 </svg>

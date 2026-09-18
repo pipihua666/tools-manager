@@ -33,6 +33,7 @@ import {
 } from "../core/mcp";
 import { backup } from "../core/backup";
 import { deleteSession, launchSession, listSessions, loadSessionMessages, parseSessionProvider } from "../core/session";
+import { getAgentHooks, listAgentHooks, updateAgentHooks, updateCodexHookState } from "../core/hook";
 import { toolAdapters } from "../core/tools";
 import { webAppHtml } from "./app";
 
@@ -145,6 +146,22 @@ async function handleRequest(request: Request, token: string, hostname: string, 
       const body = await readBody(request);
       return json({ session: await deleteSession(parseSessionProvider(body.provider), requiredString(body, "sessionId"), requiredString(body, "sourcePath")) });
     }
+    if (request.method === "GET" && url.pathname === "/api/hooks") return json({ hooks: await listAgentHooks() });
+    if (request.method === "POST" && url.pathname === "/api/hooks/codex/state") {
+      const body = await readBody(request);
+      if (typeof body.enabled !== "boolean") throw new Error("Missing required field: enabled");
+      return json({ handler: await updateCodexHookState(requiredString(body, "stateId"), body.enabled) });
+    }
+    if (url.pathname.startsWith("/api/hooks/")) {
+      const [toolPart, event] = pathParts(url.pathname, "/api/hooks/", 2);
+      const tool = optionalTool(toolPart);
+      if (tool === "all") throw new Error("Select one Agent.");
+      if (request.method === "GET") return json({ hook: await getAgentHooks(tool, event!) });
+      if (request.method === "PUT") {
+        const body = await readBody(request);
+        return json({ hook: await updateAgentHooks(tool, event!, requiredContent(body, "content")) });
+      }
+    }
     if (request.method === "GET" && url.pathname.startsWith("/api/agent-skills/")) {
       const [tool, name] = pathParts(url.pathname, "/api/agent-skills/", 2);
       const selectedTool = optionalTool(tool);
@@ -244,11 +261,12 @@ function devEvents(bootId: string): Response {
 }
 
 async function snapshot() {
-  const [managerStatus, skills, mcpServers, agents] = await Promise.all([
+  const [managerStatus, skills, mcpServers, agents, hooks] = await Promise.all([
     status(),
     listSkills(),
     listMcpServers(),
     listAgentOverview("all"),
+    listAgentHooks(),
   ]);
   const skillDetails = await Promise.all(skills.map(async (skill) => ({
     ...skill,
@@ -264,6 +282,7 @@ async function snapshot() {
       envKeys: Object.keys(env),
       headerKeys: Object.keys(headers),
     })),
+    hooks,
     agents: agents.map((agent) => ({
       ...agent,
       skills: agent.skills.map((skill) => ({
@@ -293,6 +312,12 @@ async function readBody(request: Request): Promise<JsonRecord> {
 function requiredString(body: JsonRecord, key: string): string {
   const value = body[key];
   if (typeof value !== "string" || !value.trim()) throw new Error(`Missing required field: ${key}`);
+  return value.trim();
+}
+
+function requiredContent(body: JsonRecord, key: string): string {
+  const value = body[key];
+  if (typeof value !== "string") throw new Error(`Missing required field: ${key}`);
   return value.trim();
 }
 
