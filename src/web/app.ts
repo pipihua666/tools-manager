@@ -3,16 +3,23 @@ export const webAppHtml = String.raw`<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
   <title>Tools Manager</title>
   <style>
     :root {
       --ink: #101513;
-      --muted: #68716d;
+      --muted: #5f6864;
+      --subtle-text: #657069;
+      --accent-text: #526714;
+      --placeholder: #657069;
       --line: #d5dad3;
       --line-strong: #a8b0aa;
       --paper: #f0f2ec;
       --panel: #fbfcf8;
+      --panel-soft: #f5f7f1;
+      --panel-hover: #f1f5e8;
+      --field: #fdfefb;
+      --topbar: rgba(240, 242, 236, .94);
       --graphite: #191f1c;
       --sidebar: #101512;
       --accent: #d7ff4f;
@@ -30,14 +37,20 @@ export const webAppHtml = String.raw`<!doctype html>
       color: var(--ink);
       background: var(--paper);
       letter-spacing: 0;
+      color-scheme: light dark;
     }
     * { box-sizing: border-box; }
-    body { position: relative; margin: 0; min-width: 320px; min-height: 100vh; background: var(--paper); }
-    body::before {
-      content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .55;
-      background-image: linear-gradient(rgba(16, 21, 19, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(16, 21, 19, .035) 1px, transparent 1px);
-      background-size: 24px 24px;
+    .sr-only {
+      position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important;
+      overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
     }
+    body { position: relative; margin: 0; min-width: 320px; min-height: 100vh; background: var(--paper); }
+    ::selection { background: var(--accent); color: var(--ink); }
+    * { scrollbar-color: #89928d var(--paper); scrollbar-width: thin; }
+    *::-webkit-scrollbar { width: 10px; height: 10px; }
+    *::-webkit-scrollbar-track { background: var(--paper); }
+    *::-webkit-scrollbar-thumb { border: 3px solid var(--paper); border-radius: 8px; background: #89928d; }
+    *::-webkit-scrollbar-thumb:hover { background: #5f6963; }
     button, input, textarea, select { font: inherit; letter-spacing: 0; }
     button { cursor: pointer; }
     button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
@@ -59,7 +72,7 @@ export const webAppHtml = String.raw`<!doctype html>
     .brand-name { font: 700 17px/1.05 var(--display); text-transform: uppercase; }
     .brand-meta { margin-top: 7px; color: #89938d; font: 9px/1 var(--mono); }
     .nav { padding: 22px 12px; display: grid; gap: 5px; }
-    .nav-label { padding: 13px 12px 8px; color: #68716c; font: 700 9px/1 var(--mono); text-transform: uppercase; }
+    .nav-label { padding: 13px 12px 8px; color: #89938d; font: 700 9px/1 var(--mono); text-transform: uppercase; }
     .nav button {
       position: relative; width: 100%; min-height: 46px; display: flex; align-items: center; gap: 12px; padding: 10px 12px;
       border: 1px solid transparent; border-radius: 2px; background: transparent; color: #aeb7b1; text-align: left; transition: color .16s ease, background .16s ease, transform .16s ease;
@@ -72,30 +85,30 @@ export const webAppHtml = String.raw`<!doctype html>
     .nav button.active .nav-code { color: var(--accent); }
     .sidebar-foot { margin-top: auto; padding: 18px 20px 22px; border-top: 1px solid #303733; color: #7f8a83; font: 9px/1.7 var(--mono); overflow-wrap: anywhere; }
     .connection-line { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; color: #b4beb7; }
-    .status-pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(215, 255, 79, .1); animation: pulse 2.4s ease-in-out infinite; }
+    .status-pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(215, 255, 79, .1); animation: status-arrive .5s cubic-bezier(.16, 1, .3, 1) both; }
     .main { position: relative; min-width: 0; overflow: hidden; }
     .main::after { content: "TM / LOCAL"; position: fixed; right: 18px; bottom: 10px; z-index: -1; color: rgba(16, 21, 19, .18); font: 9px/1 var(--mono); }
     .topbar {
       position: sticky; top: 0; z-index: 9; min-height: 108px; display: flex; align-items: center; justify-content: space-between; gap: 24px;
-      padding: 18px clamp(22px, 4vw, 54px); background: rgba(240, 242, 236, .94); border-bottom: 2px solid var(--ink); backdrop-filter: blur(14px);
+      padding: 18px clamp(22px, 4vw, 54px); background: var(--topbar); border-bottom: 2px solid var(--ink); backdrop-filter: blur(14px);
     }
     .title-block { display: flex; align-items: center; gap: 18px; }
-    .title-index { color: var(--accent-strong); font: 700 11px/1 var(--mono); writing-mode: vertical-rl; transform: rotate(180deg); }
+    .title-index { color: var(--accent-text); font: 700 11px/1 var(--mono); writing-mode: vertical-rl; transform: rotate(180deg); }
     .eyebrow { color: var(--muted); font: 700 9px/1.2 var(--mono); text-transform: uppercase; }
     h1 { margin: 7px 0 0; font: 700 32px/.95 var(--display); text-transform: uppercase; }
     .topbar-tools { display: flex; align-items: center; gap: 18px; }
-    .system-state { min-width: 112px; padding-left: 14px; border-left: 1px solid var(--line-strong); color: var(--muted); font: 9px/1.55 var(--mono); text-transform: uppercase; }
+    .system-state { min-width: 128px; padding: 6px 0 6px 14px; border-left: 1px solid var(--line-strong); color: var(--muted); font: 9px/1.55 var(--mono); text-transform: uppercase; }
     .system-state strong { display: flex; align-items: center; gap: 7px; color: var(--ink); font-size: 10px; }
     .system-state strong::before { content: ""; width: 6px; height: 6px; background: var(--accent-strong); border-radius: 50%; }
     .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
     .content { width: 100%; max-width: 1640px; margin: 0 auto; padding: 34px clamp(22px, 4vw, 54px) 70px; }
-    #view.view-enter > * { animation: view-in .36s cubic-bezier(.2, .7, .2, 1) both; }
+    #view.view-enter > * { animation: view-in .28s cubic-bezier(.2, .7, .2, 1) both; }
     #view.view-enter > *:nth-child(2) { animation-delay: .055s; }
     #view.view-enter > *:nth-child(3) { animation-delay: .1s; }
     .metrics { display: grid; grid-template-columns: 1.22fr repeat(2, minmax(0, 1fr)); border-top: 2px solid var(--ink); border-bottom: 1px solid var(--line-strong); background: var(--panel); }
-    .metric { position: relative; min-height: 124px; padding: 22px 20px 18px 44px; border-right: 1px solid var(--line); overflow: hidden; }
+    .metric { position: relative; min-height: 124px; padding: 22px 20px 18px 44px; border-right: 1px solid var(--line); overflow: hidden; transition: background .18s ease, color .18s ease; }
     .metric:last-child { border-right: 0; }
-    .metric::before { position: absolute; left: 14px; top: 23px; color: #9aa39d; font: 9px/1 var(--mono); }
+    .metric::before { position: absolute; left: 14px; top: 23px; color: var(--subtle-text); font: 9px/1 var(--mono); }
     .metric:nth-child(1)::before { content: "01"; }
     .metric:nth-child(2)::before { content: "02"; }
     .metric:nth-child(3)::before { content: "03"; }
@@ -108,7 +121,9 @@ export const webAppHtml = String.raw`<!doctype html>
     .metric-label { color: var(--muted); font: 700 9px/1 var(--mono); text-transform: uppercase; }
     .metric-value { margin-top: 14px; font: 800 36px/.9 var(--display); }
     .metric-note { margin-top: 12px; color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .manager-path { width: fit-content; max-width: 100%; display: flex; align-items: center; gap: 9px; margin-top: 12px; padding-left: 2px; color: #657069; font: 10px/1.45 var(--mono); transition: color .14s ease, transform .14s ease; }
+    .metric:not(:first-child):hover { background: var(--panel-soft); }
+    .metric:not(:first-child):hover .metric-value { color: var(--accent-text); }
+    .manager-path { width: fit-content; max-width: 100%; display: flex; align-items: center; gap: 9px; margin-top: 12px; padding-left: 2px; color: var(--subtle-text); font: 10px/1.45 var(--mono); transition: color .14s ease, transform .14s ease; }
     .manager-path::before { content: ""; width: 7px; height: 7px; flex: 0 0 7px; background: var(--accent-strong); transform: rotate(45deg); }
     .manager-path:hover { color: var(--ink); transform: translateX(2px); }
     .manager-path code { min-width: 0; color: inherit; overflow-wrap: anywhere; }
@@ -127,8 +142,9 @@ export const webAppHtml = String.raw`<!doctype html>
     .scope-stat.system strong { border-color: #e3bf75; background: #fff7e5; color: #845c12; }
     .filter-strip { min-width: 0; display: inline-flex; align-items: center; gap: 3px; padding: 3px; border: 1px solid var(--line-strong); background: #e7eae3; overflow-x: auto; scrollbar-width: none; }
     .filter-strip::-webkit-scrollbar { display: none; }
-    .filter-button { min-height: 32px; display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; border: 0; border-radius: 1px; background: transparent; color: #5c6660; white-space: nowrap; font: 700 9px/1 var(--mono); text-transform: uppercase; }
+    .filter-button { min-height: 32px; display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; border: 0; border-radius: 1px; background: transparent; color: #5c6660; white-space: nowrap; font: 700 9px/1 var(--mono); text-transform: uppercase; transition: background .14s ease, color .14s ease, box-shadow .14s ease; }
     .filter-button:hover { background: #f4f6f1; color: var(--ink); }
+    .filter-button:focus-visible { position: relative; z-index: 1; }
     .filter-button[aria-pressed="true"] { background: var(--graphite); color: white; box-shadow: inset 0 -2px 0 var(--accent); }
     .filter-count { min-width: 18px; height: 18px; display: grid; place-items: center; padding: 0 4px; border: 1px solid #b9c0bb; background: rgba(255, 255, 255, .45); color: #59635d; font-size: 8px; }
     .filter-button[aria-pressed="true"] .filter-count { border-color: #5c675f; background: var(--accent); color: var(--ink); }
@@ -136,7 +152,7 @@ export const webAppHtml = String.raw`<!doctype html>
     .resource-search { width: 100%; min-height: 40px; padding: 8px 12px; border: 1px solid var(--line-strong); border-right: 0; border-radius: 2px 0 0 2px; background: var(--panel); color: var(--ink); font-size: 12px; }
     .resource-search:hover { border-color: #758078; }
     .resource-search:focus { border-color: var(--blue); background: white; box-shadow: 0 0 0 3px rgba(23, 109, 146, .12); outline: 0; }
-    .resource-search::placeholder { color: #89928d; }
+    .resource-search::placeholder { color: var(--placeholder); opacity: 1; }
     .resource-search-form .btn { min-width: 76px; border-radius: 0 2px 2px 0; }
     .btn {
       min-height: 37px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 7px 13px;
@@ -145,11 +161,13 @@ export const webAppHtml = String.raw`<!doctype html>
     }
     .btn:hover { border-color: #707a74; background: #f5f7f1; transform: translateY(-1px); }
     .btn:active { transform: translateY(0); }
-    .btn.primary { border-color: #8cab24; background: var(--accent); color: #101510; box-shadow: 3px 3px 0 var(--ink); }
-    .btn.primary:hover { background: #c9f337; box-shadow: 1px 1px 0 var(--ink); transform: translate(2px, 2px); }
+    .btn.primary { border-color: #8cab24; background: var(--accent); color: #101510; box-shadow: 0 2px 5px rgba(64, 84, 13, .22); }
+    .btn.primary:hover { border-color: #6f9212; background: #c9f337; box-shadow: 0 4px 10px rgba(64, 84, 13, .2); transform: translateY(-2px); }
+    .btn.primary:active { box-shadow: 0 1px 2px rgba(64, 84, 13, .2); transform: translateY(0); }
     .btn.danger { border-color: #e0aaa6; color: #a43b35; background: #fffafa; }
     .btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
     .btn.icon { width: 37px; padding: 0; font: 700 16px/1 var(--mono); }
+    .btn.icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .agent-sync-list { display: flex; align-items: center; gap: 6px; min-width: max-content; }
     .agent-sync, .delete-icon {
       width: 38px; min-width: 38px; height: 38px; min-height: 38px; display: inline-grid; place-items: center; padding: 0;
@@ -169,13 +187,14 @@ export const webAppHtml = String.raw`<!doctype html>
     .delete-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .managed-delete { display: flex; align-items: center; margin-left: 4px; padding-left: 10px; border-left: 1px solid var(--line); }
     .managed-delete .delete-icon { border-color: #e0aaa6; background: #fffafa; }
-    .table-wrap { width: 100%; overflow: auto; border: 1px solid var(--line-strong); border-top: 0; background: var(--panel); box-shadow: 5px 5px 0 rgba(16, 21, 19, .07); }
+    .table-wrap { width: 100%; overflow: auto; border: 1px solid var(--line-strong); border-top: 0; background: var(--panel); box-shadow: 0 8px 22px rgba(16, 21, 19, .07); }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th { position: sticky; top: 0; z-index: 1; padding: 12px; border-bottom: 1px solid #343b37; background: var(--graphite); color: #aeb7b1; font: 700 9px/1 var(--mono); text-align: left; text-transform: uppercase; vertical-align: middle; white-space: nowrap; }
     td { padding: 14px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; transition: background .14s ease; }
     tr:last-child td { border-bottom: 0; }
-    tbody tr:hover td { background: #f4f7ed; }
-    tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--accent-strong); }
+    tbody tr:hover td { background: var(--panel-hover); }
+    tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--accent-strong); }
+    tbody tr:focus-within td { background: #edf7fb; }
     .name-button { padding: 0; border: 0; background: transparent; color: var(--ink); font-weight: 700; text-align: left; }
     .name-button:hover { color: var(--blue); text-decoration: underline; text-underline-offset: 3px; }
     .mono { font-family: var(--mono); font-size: 11px; }
@@ -186,21 +205,23 @@ export const webAppHtml = String.raw`<!doctype html>
     .tag.green { border-color: #b4cf6f; background: #f1f8dc; color: #536b1c; }
     .tag.amber { border-color: #e3bf75; background: #fff7e5; color: #845c12; }
     .tag.red { border-color: #e5b0ab; background: var(--red-soft); color: #973a34; }
-    .dot { width: 8px; height: 8px; display: inline-block; border-radius: 50%; background: #aeb5b9; }
+    .agent-status { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .agent-status-copy { color: var(--muted); font: 700 9px/1.2 var(--mono); text-transform: uppercase; }
+    .dot { width: 8px; height: 8px; flex: 0 0 8px; display: inline-block; border-radius: 50%; background: #aeb5b9; }
     .dot.online { background: var(--accent-strong); box-shadow: 0 0 0 3px #edf6d8; }
     .agent-table { min-width: 1080px; table-layout: fixed; }
-    .agent-table .status-column { width: 44px; }
+    .agent-table .status-column { width: 102px; }
     .agent-table .agent-column { width: 150px; }
     .agent-table .count-column { width: 150px; }
     .agent-table .skill-path-column { width: 33%; }
     .agent-table .mcp-path-column { width: 25%; }
     .agent-paths { display: grid; gap: 5px; }
-    .agent-path { color: #303a35; font: 10px/1.45 var(--mono); overflow-wrap: anywhere; }
+    .agent-path { color: var(--subtle-text); font: 10px/1.45 var(--mono); overflow-wrap: anywhere; }
     .agent-path + .agent-path { padding-top: 5px; border-top: 1px dotted var(--line); }
     .empty { padding: 60px 20px; border: 1px solid var(--line-strong); border-top: 2px solid var(--ink); background: var(--panel); text-align: center; }
     .empty strong { display: block; font-size: 15px; }
     .empty span { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; }
-    .command { max-width: 420px; padding: 8px 10px; background: #edf0e9; border-left: 3px solid var(--blue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 10px/1.3 var(--mono); }
+    .command { max-width: 420px; padding: 8px 10px; border: 1px solid #c7d9e2; background: #edf5f8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 10px/1.3 var(--mono); }
     .hook-agent-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
     .hook-agent-button { min-height: 42px; display: inline-flex; align-items: center; gap: 9px; padding: 8px 12px; border: 1px solid var(--line-strong); background: var(--panel); color: var(--muted); font: 700 10px/1 var(--mono); }
     .hook-agent-button:hover { color: var(--ink); background: white; }
@@ -225,7 +246,7 @@ export const webAppHtml = String.raw`<!doctype html>
     .hook-toggle:disabled { cursor: not-allowed; opacity: .45; }
     dialog {
       width: min(620px, calc(100vw - 28px)); max-width: none; max-height: calc(100vh - 36px); max-height: calc(100dvh - 36px); padding: 0;
-      overflow: hidden; border: 1px solid #747e78; border-top: 4px solid var(--accent); border-radius: var(--radius);
+      overflow: hidden; border: 1px solid #747e78; border-top-color: var(--accent); border-radius: var(--radius);
       background: var(--panel); color: var(--ink); box-shadow: var(--shadow);
     }
     dialog[open] { animation: dialog-in .18s cubic-bezier(.2, .75, .25, 1); }
@@ -313,17 +334,17 @@ export const webAppHtml = String.raw`<!doctype html>
     .detail-meta { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 14px; margin-bottom: 18px; font-size: 12px; }
     .detail-meta dt { color: var(--muted); font-family: var(--mono); }
     .detail-meta dd { margin: 0; overflow-wrap: anywhere; }
-    pre { margin: 0; padding: 16px; border: 1px solid var(--line); border-left: 3px solid var(--blue); background: #eef1eb; overflow: auto; font: 10px/1.65 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+    pre { margin: 0; padding: 16px; border: 1px solid #c7d9e2; background: #eef5f7; overflow: auto; font: 10px/1.65 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
     .confirm-copy { margin: 0; color: #3f474c; font-size: 13px; line-height: 1.6; white-space: pre-line; }
     .toast-region { position: fixed; right: 18px; bottom: 18px; z-index: 20; display: grid; gap: 8px; width: min(360px, calc(100vw - 36px)); }
-    .toast { padding: 13px 15px; border: 1px solid #707a74; border-left: 4px solid var(--accent); border-radius: 2px; background: var(--graphite); color: white; box-shadow: var(--shadow); font-size: 11px; animation: toast-in .18s ease-out; }
-    .toast.error { border-left-color: #e7655d; }
+    .toast { padding: 13px 15px; border: 1px solid #707a74; border-radius: 2px; background: var(--graphite); color: white; box-shadow: inset 0 2px 0 var(--accent), var(--shadow); font-size: 11px; animation: toast-in .18s ease-out; }
+    .toast.error { box-shadow: inset 0 2px 0 #e7655d, var(--shadow); }
     .btn.loading { cursor: wait; }
     .mcp-add-dialog #dynamic-form { height: min(680px, calc(100vh - 40px)); height: min(680px, calc(100dvh - 40px)); }
     .btn.loading::before { content: ""; width: 13px; height: 13px; flex: 0 0 13px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .75s linear infinite; }
     .agent-sync.loading .agent-glyph { display: none; }
     .content.sessions-content { max-width: none; height: calc(100vh - 108px); height: calc(100dvh - 108px); padding-top: 18px; padding-bottom: 18px; }
-    .session-shell { height: 100%; min-height: 520px; display: grid; grid-template-columns: 320px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); border: 1px solid var(--line-strong); border-top: 3px solid var(--ink); background: var(--panel); box-shadow: 6px 6px 0 rgba(16, 21, 19, .08); overflow: hidden; }
+    .session-shell { height: 100%; min-height: 520px; display: grid; grid-template-columns: 320px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); border: 1px solid var(--line-strong); border-top: 3px solid var(--ink); background: var(--panel); box-shadow: 0 10px 28px rgba(16, 21, 19, .08); overflow: hidden; }
     .session-sidebar { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr); border-right: 1px solid var(--line-strong); background: #f5f7f1; }
     .session-sidebar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 15px 16px 12px; border-bottom: 1px solid var(--line); }
     .session-sidebar-head strong { font: 700 14px/1 var(--display); text-transform: uppercase; }
@@ -342,8 +363,8 @@ export const webAppHtml = String.raw`<!doctype html>
     .session-agent-all { width: 19px; height: 19px; flex: 0 0 19px; display: grid; place-items: center; border: 1px solid #77817b; border-radius: 50%; color: #aeb7b1; font: 700 9px/1 var(--mono); }
     .session-agent-menu .select-option[aria-selected="true"] .session-agent-all { border-color: var(--ink); color: var(--ink); }
     .session-list { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
-    .session-item { width: 100%; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; padding: 13px 14px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); text-align: left; }
-    .session-item:hover { background: #eef2e7; }
+    .session-item { width: 100%; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; padding: 13px 14px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); text-align: left; transition: background .14s ease, box-shadow .14s ease; }
+    .session-item:hover { background: #eef2e7; box-shadow: inset 2px 0 0 #a3ac9f; }
     .session-item[aria-current="true"] { background: #e8f0d1; box-shadow: inset 3px 0 0 var(--accent-strong); }
     .session-provider-icon { width: 25px; height: 25px; display: grid; place-items: center; color: #38413c; }
     .session-provider-icon svg { width: 100%; height: 100%; fill: currentColor; }
@@ -360,7 +381,7 @@ export const webAppHtml = String.raw`<!doctype html>
     .session-meta-line button { min-width: 0; max-width: 360px; padding: 0; border: 0; background: transparent; color: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: underline; text-underline-offset: 2px; }
     .session-actions { display: flex; gap: 7px; flex: 0 0 auto; }
     .session-command { display: grid; grid-template-columns: minmax(0, 1fr) 34px; align-items: center; gap: 4px; margin-top: 12px; }
-    .session-command code { min-width: 0; padding: 8px 10px; background: #edf0e9; border-left: 3px solid var(--blue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 10px/1.2 var(--mono); }
+    .session-command code { min-width: 0; padding: 8px 10px; border: 1px solid #c7d9e2; background: #edf5f8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 10px/1.2 var(--mono); }
     .session-command button { width: 34px; height: 32px; padding: 0; border: 1px solid var(--line); background: transparent; color: var(--muted); }
     .session-command svg, .session-actions svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .session-body { min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 220px; }
@@ -368,15 +389,15 @@ export const webAppHtml = String.raw`<!doctype html>
     .session-transcript-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 11px; font-weight: 700; }
     .session-truncated { margin-left: auto; color: #845c12; font: 8px/1 var(--mono); text-transform: uppercase; }
     .session-messages { min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 14px 16px 30px; overscroll-behavior: contain; scroll-behavior: smooth; }
-    .session-message { position: relative; width: 100%; margin-bottom: 11px; padding: 11px 13px; border: 1px solid var(--line); border-left: 3px solid #8d9891; background: white; }
+    .session-message { position: relative; width: 100%; margin-bottom: 11px; padding: 11px 13px; border: 1px solid var(--line); background: white; }
     .session-message.user, .session-message.assistant { width: fit-content; max-width: 78%; padding: 12px 14px; border-left-width: 1px; border-radius: 4px; }
     .session-message.user { margin-right: auto; border-color: #b8ca7c; background: #f2f8df; }
     .session-message.assistant { margin-left: auto; border-color: #91b9ca; background: #edf7fb; }
     .session-message.user::after, .session-message.assistant::after { content: ""; position: absolute; top: 15px; width: 8px; height: 8px; background: inherit; transform: rotate(45deg); }
     .session-message.user::after { left: -5px; border-left: 1px solid #b8ca7c; border-bottom: 1px solid #b8ca7c; }
     .session-message.assistant::after { right: -5px; border-top: 1px solid #91b9ca; border-right: 1px solid #91b9ca; }
-    .session-message.tool { border-left-color: #7555a5; background: #faf8fd; }
-    .session-message.developer, .session-message.system { border-color: #e1bb70; border-left: 3px solid var(--amber); background: #fff6e5; }
+    .session-message.tool { border-color: #c8b9df; background: #faf8fd; }
+    .session-message.developer, .session-message.system { border-color: #e1bb70; background: #fff6e5; }
     .session-message.active { animation: session-flash 1.2s ease-out; }
     .session-message-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; color: var(--muted); font: 700 8px/1 var(--mono); text-transform: uppercase; }
     .session-message-content { margin: 0; padding: 0; border: 0; background: transparent; color: #252c28; font: 11px/1.62 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -391,7 +412,7 @@ export const webAppHtml = String.raw`<!doctype html>
     .session-placeholder span { display: block; margin-top: 7px; font-size: 11px; }
     @keyframes session-flash { 0%, 35% { background: #eff8cf; } }
     @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes pulse { 50% { opacity: .48; transform: scale(.82); } }
+    @keyframes status-arrive { from { opacity: .25; transform: scale(.55); } }
     @keyframes view-in { from { opacity: 0; transform: translateY(10px); } }
     @keyframes dialog-in { from { opacity: 0; transform: translateY(12px) scale(.985); } }
     @keyframes menu-in { from { opacity: 0; transform: translateY(-5px); } }
@@ -404,8 +425,9 @@ export const webAppHtml = String.raw`<!doctype html>
       .brand::after { display: none; }
       .brand-mark { width: 36px; height: 36px; flex-basis: 36px; }
       .brand-meta, .sidebar-foot, .nav-label { display: none; }
-      .nav { display: flex; gap: 4px; overflow-x: auto; padding: 7px 10px 9px; }
-      .nav button { width: auto; min-width: max-content; min-height: 38px; padding: 7px 11px; border: 0; border-bottom: 3px solid transparent; }
+      .nav { display: flex; gap: 4px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none; padding: 7px 10px 9px; }
+      .nav::-webkit-scrollbar { display: none; }
+      .nav button { width: auto; min-width: max-content; min-height: 44px; padding: 7px 11px; border: 0; border-bottom: 3px solid transparent; scroll-snap-align: start; }
       .nav button::after { display: none; }
       .nav button.active { border: 0; border-bottom: 3px solid var(--accent); box-shadow: none; }
       .nav-code { display: none; }
@@ -449,8 +471,8 @@ export const webAppHtml = String.raw`<!doctype html>
       .section-head { align-items: stretch; flex-direction: column; }
       .toolbar { justify-content: flex-start; }
       .check-grid { grid-template-columns: 1fr; }
-      .target-tool-grid { grid-template-columns: repeat(5, 40px); gap: 6px; }
-      .target-tool-check, .target-tool-icon { width: 40px; height: 40px; }
+      .target-tool-grid { grid-template-columns: repeat(5, 44px); gap: 6px; }
+      .target-tool-check, .target-tool-icon { width: 44px; height: 44px; }
       dialog { width: calc(100vw - 16px); max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); }
       #dynamic-form { max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); }
       .mcp-add-dialog #dynamic-form { height: calc(100vh - 20px); height: calc(100dvh - 20px); }
@@ -460,45 +482,437 @@ export const webAppHtml = String.raw`<!doctype html>
       .dialog-actions { position: static; padding: 12px 16px; }
       #form-body, [data-mcp-transport], [data-mcp-add-mode], [data-skill-add-mode] { gap: 14px; }
       .field textarea { min-height: 88px; }
-      th, td { padding: 11px 9px; }
+      .mobile-table-wrap { overflow: visible; border: 0; background: transparent; box-shadow: none; }
+      .mobile-table-wrap table, .mobile-table-wrap tbody, .mobile-table-wrap tr, .mobile-table-wrap td { display: block; width: 100%; }
+      .mobile-table-wrap table { min-width: 0; table-layout: auto; }
+      .mobile-table-wrap colgroup { display: none; }
+      .mobile-table-wrap thead {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+      }
+      .mobile-table-wrap tbody { display: grid; gap: 12px; }
+      .mobile-table-wrap tr { padding: 8px 12px; border: 1px solid var(--line-strong); border-top: 2px solid var(--ink); background: var(--panel); }
+      .mobile-table-wrap td {
+        display: grid; grid-template-columns: minmax(78px, 28%) minmax(0, 1fr); align-items: center; gap: 10px;
+        min-height: 44px; padding: 8px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere;
+      }
+      .mobile-table-wrap td:last-child { border-bottom: 0; }
+      .mobile-table-wrap td::before { content: attr(data-label); color: var(--muted); font: 700 9px/1.2 var(--mono); text-transform: uppercase; }
+      .mobile-table-wrap tbody tr:hover td:first-child { box-shadow: none; }
+      .mobile-table-wrap .truncate, .mobile-table-wrap .command { max-width: none; white-space: normal; overflow-wrap: anywhere; }
+      .mobile-table-wrap .agent-sync-list { min-width: 0; flex-wrap: wrap; }
+      .mobile-table-wrap .row-actions { justify-content: flex-start; }
+      .mobile-table-wrap .name-button, .mobile-table-wrap .hook-event-button { min-height: 44px; display: inline-flex; align-items: center; }
+      .resource-search, .session-search input, .field input, .field textarea { font-size: 16px; }
       .content.sessions-content { padding: 10px; }
       .session-shell { min-height: calc(100vh - 134px); display: block; overflow: visible; }
       .session-sidebar { height: 300px; border-right: 0; border-bottom: 1px solid var(--line-strong); }
-      .session-workspace { min-height: 620px; }
+      .session-workspace { min-height: clamp(480px, 70dvh, 620px); }
       .session-title-row { display: grid; gap: 12px; }
       .session-actions { width: 100%; }
       .session-actions .btn { flex: 1 1 auto; }
       .session-title-main h2 { white-space: normal; overflow-wrap: anywhere; }
       .session-message.user, .session-message.assistant { max-width: 88%; }
     }
+    /* Desktop workstation visual system */
+    :root {
+      --ink: #1d2521;
+      --muted: #56615b;
+      --subtle-text: #59655f;
+      --line: #e0e5e2;
+      --line-strong: #cbd3cf;
+      --paper: #eef2f0;
+      --panel: #ffffff;
+      --panel-soft: #f5f7f6;
+      --panel-hover: #f0f5f2;
+      --field: #fbfcfb;
+      --topbar: #ffffff;
+      --graphite: #202824;
+      --sidebar: #edf1ef;
+      --accent: #bdf36b;
+      --accent-strong: #6da926;
+      --accent-text: #426f16;
+      --blue: #2e7d70;
+      --red-soft: #fff1ef;
+      --shadow: 0 22px 60px rgba(31, 43, 37, .16);
+      --radius: 12px;
+      color-scheme: light dark;
+    }
+    body {
+      height: 100vh; height: 100dvh; padding: 12px; overflow: hidden;
+      background: #dfe5e2; color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+    }
+    body::before { display: none; }
+    .desktop-window {
+      width: 100%; height: 100%; overflow: hidden; border: 1px solid #c6ceca; border-radius: 16px;
+      background: var(--panel); box-shadow: 0 24px 70px rgba(27, 38, 32, .22), 0 2px 8px rgba(27, 38, 32, .08);
+    }
+    .window-chrome {
+      position: relative; height: 36px; display: grid; place-items: center; border-bottom: 1px solid var(--line);
+      background: #f6f8f7; color: #6d7772; font-size: 11px; font-weight: 600; user-select: none;
+    }
+    .window-controls { position: absolute; left: 14px; display: flex; gap: 7px; }
+    .window-controls span { width: 11px; height: 11px; border: 1px solid rgba(0, 0, 0, .12); border-radius: 50%; background: #d5dbd8; }
+    .window-controls span:first-child { background: #ff6b62; }
+    .window-controls span:nth-child(2) { background: #f6bd4f; }
+    .window-controls span:last-child { background: #61c454; }
+    .app { height: calc(100% - 36px); min-height: 0; grid-template-columns: 224px minmax(0, 1fr); background: var(--paper); }
+    .sidebar {
+      position: relative; height: 100%; background: var(--sidebar); color: var(--ink); border-right: 1px solid var(--line);
+      box-shadow: none;
+    }
+    .brand { height: 76px; padding: 17px 18px; border-bottom: 1px solid var(--line); }
+    .brand::after { display: none; }
+    .brand-mark {
+      width: 38px; height: 38px; flex-basis: 38px; border: 1px solid #9bc955; border-radius: 11px;
+      clip-path: none; background: #d9f6a9; color: #31540f; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
+    }
+    .brand-mark::after { display: none; }
+    .brand-name { color: var(--ink); font: 700 15px/1.1 -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif; text-transform: none; }
+    .brand-meta { margin-top: 5px; color: var(--subtle-text); font: 500 9px/1 var(--mono); }
+    .nav { gap: 4px; padding: 18px 10px; }
+    .nav-label { padding: 5px 10px 8px; color: var(--subtle-text); font-size: 9px; }
+    .nav button {
+      min-height: 42px; gap: 10px; padding: 9px 12px; border: 1px solid transparent; border-radius: 9px;
+      color: #626d67; font-size: 13px; font-weight: 560; transition: color .16s ease, background .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+    }
+    .nav button::after { display: none; }
+    .nav button:hover { background: rgba(255, 255, 255, .7); color: var(--ink); transform: translateX(1px); }
+    .nav button.active {
+      border-color: #d8dedb; background: #fff; color: var(--ink); box-shadow: 0 4px 12px rgba(36, 49, 42, .07), inset 3px 0 0 var(--accent-strong);
+    }
+    .nav-code { display: none; }
+    .sidebar-foot { border-top-color: var(--line); color: #7c8781; }
+    .connection-line { color: #59645e; }
+    .status-pulse { background: #78be35; box-shadow: 0 0 0 4px rgba(120, 190, 53, .12); }
+    .main { min-height: 0; display: grid; grid-template-rows: 76px minmax(0, 1fr); overflow: hidden; }
+    .main::after { display: none; }
+    .topbar {
+      position: relative; min-height: 76px; padding: 13px 24px; background: var(--topbar); border-bottom: 1px solid var(--line); backdrop-filter: none;
+    }
+    .title-block { gap: 0; }
+    .title-index, .eyebrow { display: none; }
+    h1 { margin: 0; color: var(--ink); font: 700 20px/1.2 -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif; text-transform: none; }
+    .page-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+    .system-state { min-width: 120px; padding: 5px 0 5px 13px; border-left-color: var(--line); color: var(--subtle-text); }
+    .system-state strong { color: var(--ink); }
+    .content { max-width: none; min-height: 0; padding: 24px; overflow: auto; background: var(--paper); view-transition-name: workspace; }
+    ::view-transition-old(workspace) { animation: workspace-out .12s ease-in both; }
+    ::view-transition-new(workspace) { animation: workspace-in .24s cubic-bezier(.16, 1, .3, 1) both; }
+    .metrics { gap: 12px; border: 0; background: transparent; }
+    .metric {
+      min-height: 126px; padding: 22px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel);
+      box-shadow: 0 5px 16px rgba(35, 48, 41, .045);
+    }
+    .metric::before, .metric:first-child::after { display: none; }
+    .metric:first-child { border-color: #d9e4d2; background: #f9fcf5; color: var(--ink); }
+    .metric:first-child .metric-label, .metric:first-child .metric-note { color: var(--muted); }
+    .metric:first-child .metric-note { padding: 0; border: 0; background: transparent; }
+    .metric-value { margin-top: 15px; font: 700 32px/1 -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; }
+    .metric:not(:first-child):hover { background: var(--panel-hover); }
+    .metric:not(:first-child):hover .metric-value { color: var(--ink); }
+    .manager-path { color: var(--muted); }
+    .section { margin-top: 32px; }
+    .section-head > div:first-child { display: block; }
+    .section-head > div:first-child::before { display: none; }
+    h2 { font: 700 16px/1.25 -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif; text-transform: none; }
+    .section-note { margin-top: 5px; }
+    .btn {
+      min-height: 36px; border-color: var(--line-strong); border-radius: 8px; background: #fff; font-size: 11px;
+      box-shadow: 0 1px 2px rgba(25, 36, 30, .04);
+    }
+    .btn:hover { border-color: #aeb9b3; background: #f8faf9; transform: translateY(-1px); }
+    .btn.primary { border-color: #8fbf4c; background: #c8f37f; box-shadow: 0 4px 10px rgba(83, 125, 32, .12); }
+    .btn.primary:hover { border-color: #79a83c; background: #bdf06c; box-shadow: 0 6px 14px rgba(83, 125, 32, .16); }
+    .filter-strip, .mode-switch { border-color: var(--line); border-radius: 9px; background: #e6ebe8; }
+    .filter-button { border-radius: 6px; }
+    .filter-button[aria-pressed="true"], .mode-switch button[aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 2px 7px rgba(25, 36, 30, .08); }
+    .filter-button[aria-pressed="true"] { box-shadow: 0 2px 7px rgba(25, 36, 30, .08); }
+    .filter-button[aria-pressed="true"] .filter-count { border-color: #b9d68a; background: #e6f7ca; }
+    .resource-search, .field input, .field textarea, .select-trigger { border-color: var(--line-strong); border-radius: 8px; background: var(--field); }
+    .resource-search { border-radius: 8px 0 0 8px; }
+    .resource-search-form .btn { border-radius: 0 8px 8px 0; }
+    .table-wrap { border-color: var(--line); border-radius: 12px; background: var(--panel); box-shadow: 0 6px 20px rgba(35, 48, 41, .05); }
+    th { padding: 12px 14px; border-bottom-color: var(--line); background: #f7f9f8; color: #68736d; }
+    td { padding: 13px 14px; }
+    tbody tr:hover td { background: #f5f9f6; }
+    tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 #7fb63d; }
+    tbody tr:focus-within td { background: #eff7f2; }
+    .tag { border-color: var(--line); border-radius: 5px; background: #f4f6f5; color: #56615b; }
+    .tag.green { border-color: #c8dda7; background: #f0f8e4; color: #4c751d; }
+    .tag.amber { border-color: #ecd29b; background: #fff8e8; color: #805b18; }
+    .tag.red { border-color: #e9b7b2; background: var(--red-soft); color: #9c4038; }
+    dialog { border-color: #c7d0cb; border-radius: 14px; background: var(--panel); box-shadow: var(--shadow); }
+    dialog::backdrop { background: rgba(27, 36, 31, .38); backdrop-filter: blur(3px); }
+    .dialog-head, .dialog-actions { background: #f7f9f8; }
+    .confirm-copy, .session-message-content { color: var(--ink); }
+    .empty { border-color: var(--line); border-top-color: var(--line-strong); border-radius: 12px; background: var(--panel); }
+    .session-shell { border-color: var(--line); border-top: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 24px rgba(35, 48, 41, .06); }
+    .session-sidebar, .session-toc, .session-toc-title { background: #f6f8f7; }
+    .session-detail-head { background: #fff; }
+    .session-item:hover { background: #edf3ef; }
+    .session-item[aria-current="true"] { background: #e8f4df; box-shadow: inset 3px 0 0 #79ad38; }
+    .session-message { background: #fff; }
+    .session-message.user { border-color: #c5d8a7; background: #f5faed; }
+    .session-message.assistant { border-color: #b8d2ce; background: #f0f8f6; }
+    .session-message.tool { border-color: #d8cdea; background: #faf8fd; }
+    .session-message.developer, .session-message.system { border-color: #ead09c; background: #fff9ec; }
+    .session-placeholder strong { color: var(--ink); }
+    .agent-detail-shell { width: 100%; min-width: 0; min-height: 100%; display: grid; align-content: start; gap: 18px; }
+    .agent-detail-head {
+      min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 20px 22px;
+      border: 1px solid var(--line); border-radius: 14px; background: var(--panel); box-shadow: 0 6px 20px rgba(35, 48, 41, .045);
+    }
+    .agent-identity { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .agent-identity h2 { font-size: 18px; }
+    .agent-identity p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+    .agent-identity-mark {
+      width: 48px; height: 48px; flex: 0 0 48px; display: grid; place-items: center; border: 1px solid #cae0aa;
+      border-radius: 13px; background: #eef8df; color: #406b16;
+    }
+    .agent-identity-mark svg { width: 25px; height: 25px; fill: currentColor; }
+    .agent-picker { max-width: 100%; display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 10px; background: #edf1ef; overflow: hidden; }
+    .agent-picker-button {
+      min-width: 0; min-height: 38px; display: inline-flex; align-items: center; gap: 8px; padding: 7px 11px; border: 0; border-radius: 7px;
+      background: transparent; color: var(--muted); font-size: 11px; font-weight: 650; transition: background .16s ease, color .16s ease, box-shadow .16s ease, transform .16s ease;
+    }
+    .agent-picker-button:hover { color: var(--ink); }
+    .agent-picker-button[aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 3px 9px rgba(35, 48, 41, .09); }
+    .agent-picker-button:active { transform: scale(.98); }
+    .agent-picker-button:only-child { flex: 1 1 auto; }
+    .agent-picker-button .agent-glyph { width: 18px; height: 18px; }
+    .usage-grid {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: hidden;
+      border: 1px solid var(--line); border-radius: 14px; background: var(--panel); box-shadow: 0 8px 26px rgba(35, 48, 41, .055);
+    }
+    .usage-metric {
+      min-width: 0; min-height: 190px; display: flex; flex-direction: column; justify-content: center; padding: 28px;
+      border: 0; border-right: 1px solid var(--line); background: transparent; color: inherit; text-align: left;
+    }
+    .usage-metric:last-child { border-right: 0; }
+    .usage-metric-link { position: relative; transition: background .16s ease, box-shadow .16s ease; }
+    .usage-metric-link:hover { background: var(--panel-hover); box-shadow: inset 0 -3px 0 var(--accent-strong); }
+    .usage-metric-link:active { background: var(--panel-soft); }
+    .usage-metric-link .usage-note { display: inline-flex; align-items: center; gap: 7px; color: var(--blue); font-weight: 650; }
+    .usage-metric-link .usage-note svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .16s ease; }
+    .usage-metric-link:hover .usage-note svg { transform: translateX(2px); }
+    .usage-label { color: var(--muted); font-size: 11px; font-weight: 650; }
+    .usage-value {
+      margin-top: 20px; color: var(--ink); font-size: 36px; line-height: 1; font-weight: 720; font-variant-numeric: tabular-nums;
+      animation: value-settle .22s cubic-bezier(.16, 1, .3, 1) both;
+    }
+    .usage-note { margin-top: 13px; color: var(--subtle-text); font-size: 10px; }
+    .skeleton-line { width: 72%; height: 10px; display: block; border-radius: 5px; background: #e7ece9; animation: skeleton-pulse 1.1s ease-in-out infinite alternate; }
+    .skeleton-line.short { width: 38%; }
+    .skeleton-line.value { width: 54%; height: 34px; margin: 20px 0 13px; border-radius: 7px; }
+    .agent-analytics-grid { display: grid; gap: 18px; }
+    .analytics-panel {
+      min-width: 0; padding: 22px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel);
+      box-shadow: 0 6px 20px rgba(35, 48, 41, .05);
+    }
+    .analytics-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 22px; }
+    .analytics-head h3 { margin: 0; font-size: 15px; line-height: 1.25; }
+    .analytics-head p { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
+    .analytics-total { flex: 0 0 auto; color: var(--ink); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .trend-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin: -4px 0 12px; color: var(--subtle-text); font-size: 9px; }
+    .trend-legend button { display: inline-flex; align-items: center; gap: 6px; padding: 3px 0; border: 0; background: transparent; color: inherit; font: inherit; white-space: nowrap; transition: opacity .16s ease; }
+    .trend-legend button:hover { color: var(--ink); }
+    .trend-legend button[aria-pressed="false"] { opacity: .42; text-decoration: line-through; text-decoration-thickness: 1px; }
+    .trend-legend i { width: 16px; height: 2px; border-radius: 1px; background: var(--series); }
+    .trend-legend .dashed i { height: 0; border-top: 2px dashed var(--series); background: transparent; }
+    .usage-trend-chart { min-height: 250px; overflow: hidden; }
+    .usage-trend-chart svg { width: 100%; height: auto; max-height: 290px; display: block; overflow: visible; }
+    .chart-grid { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .chart-axis-label { fill: var(--subtle-text); font: 9px var(--mono); }
+    .chart-series { fill: none; stroke: var(--series); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; animation: chart-draw .24s cubic-bezier(.16, 1, .3, 1) both; }
+    .chart-series.cache-rate { stroke-dasharray: 5 5; }
+    .chart-dot { fill: var(--panel); stroke: var(--series); stroke-width: 2; vector-effect: non-scaling-stroke; transition: r .14s ease, fill .14s ease; }
+    .chart-dot:hover { r: 5; fill: var(--series); }
+    .model-distribution-body { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 24px; align-items: center; }
+    .model-donut-wrap { min-width: 0; display: grid; justify-items: center; gap: 14px; }
+    .model-donut { width: 170px; height: 170px; overflow: visible; }
+    .model-donut-track, .model-donut-segment { fill: none; stroke-width: 18; }
+    .model-donut-track { stroke: var(--panel-hover); }
+    .model-donut-segment { stroke: var(--series); transition: opacity .16s ease; animation: donut-arrive .22s cubic-bezier(.16, 1, .3, 1) both; }
+    .model-donut-segment:hover { opacity: .78; }
+    .model-donut-total { fill: var(--ink); font: 700 17px -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif; text-anchor: middle; }
+    .model-donut-label { fill: var(--subtle-text); font: 8px var(--mono); text-anchor: middle; text-transform: uppercase; }
+    .model-legend { width: 100%; display: grid; gap: 7px; }
+    .model-legend-row { width: 100%; min-width: 0; display: grid; grid-template-columns: 8px minmax(0, 1fr) auto auto; align-items: center; gap: 7px; padding: 3px 0; border: 0; background: transparent; color: var(--subtle-text); font-size: 9px; text-align: left; transition: opacity .16s ease; }
+    .model-legend-row:hover { color: var(--ink); }
+    .model-legend-row[aria-pressed="false"] { opacity: .42; text-decoration: line-through; text-decoration-thickness: 1px; }
+    .model-legend-row i { width: 7px; height: 7px; border-radius: 2px; background: var(--series); }
+    .model-legend-row span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .model-legend-row em { padding: 2px 5px; border-radius: 4px; background: var(--panel-hover); color: var(--subtle-text); font: 700 8px/1 var(--mono); font-style: normal; text-transform: uppercase; }
+    .model-legend-row strong { color: var(--ink); font-size: 9px; font-variant-numeric: tabular-nums; }
+    .model-table-wrap { min-width: 0; overflow-x: auto; }
+    .model-table { width: 100%; min-width: 670px; border-collapse: collapse; table-layout: auto; }
+    .model-table th { padding: 9px 10px; border-bottom: 1px solid var(--line); background: var(--panel-soft); color: var(--subtle-text); font-size: 8px; text-transform: uppercase; white-space: nowrap; }
+    .model-table td { padding: 11px 10px; border-bottom: 1px solid var(--line); color: var(--subtle-text); font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .model-table tbody tr:last-child td { border-bottom: 0; }
+    .model-table tbody tr:hover td { background: var(--panel-hover); }
+    .model-name-cell { max-width: 230px; color: var(--ink) !important; font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
+    .model-completion { color: var(--accent-text) !important; font-weight: 700; }
+    .effort-badge { display: inline-flex; padding: 3px 6px; border-radius: 4px; background: var(--panel-hover); color: var(--subtle-text); font: 700 8px/1 var(--mono); text-transform: uppercase; }
+    .model-recommendation { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 18px; padding: 14px 16px; border: 1px solid #d6e5c1; border-radius: 8px; background: #f7fbf1; }
+    .model-recommendation-copy { min-width: 0; }
+    .model-recommendation span { color: var(--accent-text); font-size: 9px; font-weight: 750; text-transform: uppercase; }
+    .model-recommendation strong { margin-left: 9px; overflow-wrap: anywhere; font-size: 13px; }
+    .model-recommendation small { color: var(--subtle-text); font-size: 9px; text-align: right; }
+    .model-recommendation small b { color: var(--ink); font-weight: 750; }
+    .analytics-empty { min-height: 210px; display: grid; place-items: center; color: var(--muted); font-size: 11px; text-align: center; }
+    .agent-name-button { font-family: inherit; font-size: 13px; }
+    @keyframes workspace-out { to { opacity: 0; transform: translateY(3px); } }
+    @keyframes workspace-in { from { opacity: .25; clip-path: inset(0 0 12% 0 round 12px); transform: translateY(7px); } }
+    @keyframes value-settle { from { opacity: .2; filter: blur(4px); transform: translateY(7px); } }
+    @keyframes skeleton-pulse { to { background: #f1f4f2; } }
+    @keyframes chart-draw { from { opacity: .15; stroke-dasharray: 1 12; } }
+    @keyframes donut-arrive { from { opacity: .1; } }
+    @media (max-width: 1100px) {
+      .usage-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .usage-metric:nth-child(2) { border-right: 0; }
+      .usage-metric:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+      .model-distribution-body { grid-template-columns: 180px minmax(0, 1fr); gap: 16px; }
+    }
+    @media (max-width: 900px) {
+      body { padding: 0; overflow: auto; background: var(--paper); }
+      .desktop-window { min-height: 100vh; min-height: 100dvh; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
+      .window-chrome { display: none; }
+      .app { height: auto; min-height: 100vh; min-height: 100dvh; grid-template-columns: minmax(0, 1fr); }
+      .main { display: block; overflow: visible; }
+      .content { overflow: visible; }
+      .sidebar { height: auto; }
+      .agent-detail-head { align-items: flex-start; flex-direction: column; }
+    }
+    @media (max-width: 560px) {
+      .content { padding: 14px; }
+      .usage-grid { grid-template-columns: 1fr; }
+      .usage-metric { min-height: 136px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .usage-metric:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+      .usage-metric:last-child { border-bottom: 0; }
+      .agent-detail-head { padding: 16px; }
+      .agent-picker { width: 100%; }
+      .agent-picker-button { width: calc(50% - 2px); flex: 0 1 calc(50% - 2px); justify-content: center; padding-inline: 6px; }
+      .agent-picker-button span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .analytics-panel { padding: 18px 16px; }
+      .model-distribution-body { grid-template-columns: minmax(0, 1fr); align-items: start; }
+      .model-donut-wrap { grid-template-columns: 150px minmax(0, 1fr); align-items: center; }
+      .model-donut { width: 145px; height: 145px; }
+      .usage-trend-chart { min-height: 0; overflow-x: auto; overscroll-behavior-inline: contain; }
+      .usage-trend-chart svg { width: 700px; max-width: none; }
+      .model-recommendation { align-items: flex-start; flex-direction: column; gap: 6px; }
+      .model-recommendation small { text-align: left; }
+    }
+    @media (pointer: coarse) {
+      .nav button, .btn, .filter-button, .agent-sync, .delete-icon, .hook-agent-button, .select-option, .mode-switch button, .agent-picker-button { min-height: 44px; }
+      .btn.icon, .agent-sync, .delete-icon { width: 44px; min-width: 44px; height: 44px; }
+      .hook-event-button, .name-button { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; }
+      .session-search input, .session-search button, .session-agent-select .select-trigger { min-height: 44px; height: 44px; }
+      .session-search button, .session-agent-select .select-trigger { width: 44px; }
+      .session-control-row, .session-search { grid-template-columns: minmax(0, 1fr) 44px; }
+      .session-command { grid-template-columns: minmax(0, 1fr) 44px; }
+      .session-command button { width: 44px; height: 44px; }
+      .session-toc button { min-height: 44px; }
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #edf2ef;
+        --muted: #aeb9b3;
+        --subtle-text: #919e97;
+        --line: #344139;
+        --line-strong: #58675f;
+        --paper: #101613;
+        --panel: #18201c;
+        --panel-soft: #202a24;
+        --panel-hover: #253129;
+        --field: #131a16;
+        --topbar: #18201c;
+        --graphite: #0c110e;
+        --sidebar: #121915;
+        --accent-strong: #9bd751;
+        --accent-text: #c7ef88;
+        --placeholder: #aeb9b3;
+        --blue: #72c7b8;
+        --red-soft: #321d1a;
+        --shadow: 0 22px 60px rgba(0, 0, 0, .36);
+      }
+      body { background: #0b100d; }
+      .desktop-window { border-color: #35423b; background: var(--panel); box-shadow: 0 24px 70px rgba(0, 0, 0, .42), 0 2px 8px rgba(0, 0, 0, .25); }
+      .window-chrome { background: #141b17; }
+      .window-controls span { border-color: rgba(255, 255, 255, .12); background: #465149; }
+      .sidebar { background: var(--sidebar); color: var(--ink); }
+      .brand-mark { border-color: #587a2e; background: #26391b; color: #d1f59a; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); }
+      .nav button { color: var(--muted); }
+      .nav button:hover { background: #1d2721; color: var(--ink); }
+      .nav button.active { border-color: #415047; background: #222c26; color: var(--ink); box-shadow: 0 4px 12px rgba(0, 0, 0, .2), inset 3px 0 0 var(--accent-strong); }
+      .connection-line { color: var(--muted); }
+      .metric, .agent-detail-head, .usage-grid, .analytics-panel { border-color: var(--line); background: var(--panel); box-shadow: 0 6px 20px rgba(0, 0, 0, .16); }
+      .metric:first-child { border-color: #405033; background: #1c2518; color: var(--ink); }
+      .model-table th { border-color: var(--line); background: var(--panel-soft); color: var(--muted); }
+      .model-table td { border-color: var(--line); }
+      .model-recommendation { border-color: #40552f; background: #1d2918; }
+      .chart-dot { fill: var(--panel); }
+      .btn { border-color: var(--line-strong); background: #202923; color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, .18); }
+      .btn:hover { border-color: #718078; background: #27322b; }
+      .btn.primary { border-color: #739b3d; background: #5c812e; color: #f5faef; }
+      .btn.primary:hover { border-color: #8bb84c; background: #6d9538; }
+      .filter-strip, .mode-switch, .agent-picker { border-color: var(--line); background: #222c26; }
+      .filter-button[aria-pressed="true"], .mode-switch button[aria-pressed="true"], .agent-picker-button[aria-pressed="true"] { background: #303b34; color: var(--ink); box-shadow: 0 2px 7px rgba(0, 0, 0, .2); }
+      .filter-button[aria-pressed="true"] .filter-count { border-color: #63813e; background: #30411f; color: #d9efb8; }
+      .resource-search, .field input, .field textarea, .select-trigger, .session-search input { border-color: var(--line-strong); background: var(--field); color: var(--ink); }
+      .table-wrap, dialog, .empty { border-color: var(--line); background: var(--panel); box-shadow: 0 6px 20px rgba(0, 0, 0, .18); }
+      th, .dialog-head, .dialog-actions { border-color: var(--line); background: #202823; color: var(--muted); }
+      tbody tr:hover td { background: var(--panel-hover); }
+      tbody tr:focus-within td { background: #1b3028; }
+      .tag { border-color: var(--line); background: #252e29; color: #d7dfda; }
+      .tag.green { border-color: #607b3d; background: #26351c; color: #d4efaa; }
+      .tag.amber { border-color: #80682f; background: #332a18; color: #f0ce89; }
+      .tag.red { border-color: #87504a; background: var(--red-soft); color: #ffaaa2; }
+      .session-sidebar, .session-toc, .session-toc-title { background: #151c18; }
+      .session-detail-head, .session-message { background: var(--panel); }
+      .session-item:hover { background: #222c25; }
+      .session-item[aria-current="true"] { background: #29381f; }
+      .session-message.user { border-color: #637943; background: #24321a; }
+      .session-message.assistant { border-color: #4f7770; background: #172c28; }
+      .session-message.tool { border-color: #6c5b88; background: #251f2d; }
+      .session-message.developer, .session-message.system { border-color: #80682f; background: #332a18; }
+      .agent-identity-mark { border-color: #567638; background: #26371d; color: #d1efaa; }
+      .skeleton-line, .trend-track { background: #29332d; }
+      .skeleton-line.value, .skeleton-line.short { background: #344039; }
+    }
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+      *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition-duration: .01ms !important; }
+      .session-message.active { outline: 3px solid var(--accent-text); outline-offset: 2px; background: var(--panel-hover); }
     }
   </style>
 </head>
 <body>
+  <div class="desktop-window">
+    <div class="window-chrome" aria-hidden="true"><div class="window-controls"><span></span><span></span><span></span></div><div class="window-title">Tools Manager</div></div>
   <div class="app">
     <aside class="sidebar">
       <div class="brand"><div class="brand-mark">TM</div><div><div class="brand-name">Tools Manager</div><div class="brand-meta">LOCAL CONTROL PLANE</div></div></div>
       <nav class="nav" aria-label="Primary navigation">
         <div class="nav-label">Workspace</div>
         <button data-view="dashboard"><span class="nav-code">01</span><span>Dashboard</span></button>
-        <button data-view="skills"><span class="nav-code">02</span><span>Skills</span></button>
-        <button data-view="mcp"><span class="nav-code">03</span><span>MCP Servers</span></button>
-        <button data-view="hooks"><span class="nav-code">04</span><span>Hooks</span></button>
-        <button data-view="sessions"><span class="nav-code">05</span><span>Sessions</span></button>
+        <button data-view="agents"><span class="nav-code">02</span><span>Agents</span></button>
+        <button data-view="skills"><span class="nav-code">03</span><span>Skills</span></button>
+        <button data-view="mcp"><span class="nav-code">04</span><span>MCP Servers</span></button>
+        <button data-view="hooks"><span class="nav-code">05</span><span>Hooks</span></button>
+        <button data-view="sessions"><span class="nav-code">06</span><span>Sessions</span></button>
       </nav>
       <div class="sidebar-foot"><div class="connection-line"><span class="status-pulse"></span><span>LOCAL SESSION</span></div><div id="server-address"></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="title-block"><div class="title-index" id="page-index">01</div><div><div class="eyebrow" id="page-eyebrow">Workspace overview</div><h1 id="page-title">Dashboard</h1></div></div><div class="topbar-tools"><div class="system-state"><strong id="runtime-mode">Local session</strong><span>127.0.0.1</span></div><div class="top-actions" id="top-actions"></div></div></header>
+      <header class="topbar"><div class="title-block"><div><h1 id="page-title">Dashboard</h1><p class="page-subtitle" id="page-subtitle">Workspace overview</p></div></div><div class="topbar-tools"><div class="system-state"><strong id="runtime-mode">Local session</strong><span>127.0.0.1</span></div><div class="top-actions" id="top-actions"></div></div></header>
       <div class="content" id="view"></div>
     </main>
   </div>
+  </div>
 
-  <dialog id="form-dialog"><form id="dynamic-form"><div class="dialog-head"><h2 id="form-title"></h2><button type="button" class="btn icon ghost" data-close aria-label="Close">&times;</button></div><div class="dialog-body" id="form-body"></div><div class="dialog-actions"><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn primary" id="form-submit">Save</button></div></form></dialog>
-  <dialog id="detail-dialog"><div class="dialog-head"><h2 id="detail-title"></h2><button type="button" class="btn icon ghost" data-close aria-label="Close">&times;</button></div><div class="dialog-body" id="detail-body"></div><div class="dialog-actions"><button type="button" class="btn" data-close>Close</button></div></dialog>
-  <dialog id="confirm-dialog"><div class="dialog-head"><h2 id="confirm-title">Confirm action</h2><button type="button" class="btn icon ghost" data-confirm="false" aria-label="Close">&times;</button></div><div class="dialog-body"><p class="confirm-copy" id="confirm-copy"></p></div><div class="dialog-actions"><button type="button" class="btn" data-confirm="false">Cancel</button><button type="button" class="btn danger" data-confirm="true">Confirm</button></div></dialog>
+  <dialog id="form-dialog" aria-labelledby="form-title"><form id="dynamic-form"><div class="dialog-head"><h2 id="form-title"></h2><button type="button" class="btn icon ghost" data-close aria-label="Close">&times;</button></div><div class="dialog-body" id="form-body"></div><div class="dialog-actions"><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn primary" id="form-submit">Save</button></div></form></dialog>
+  <dialog id="detail-dialog" aria-labelledby="detail-title"><div class="dialog-head"><h2 id="detail-title"></h2><button type="button" class="btn icon ghost" data-close aria-label="Close">&times;</button></div><div class="dialog-body" id="detail-body"></div><div class="dialog-actions"><button type="button" class="btn" data-close>Close</button></div></dialog>
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title"><div class="dialog-head"><h2 id="confirm-title">Confirm action</h2><button type="button" class="btn icon ghost" data-confirm="false" aria-label="Close">&times;</button></div><div class="dialog-body"><p class="confirm-copy" id="confirm-copy"></p></div><div class="dialog-actions"><button type="button" class="btn" data-confirm="false">Cancel</button><button type="button" class="btn danger" data-confirm="true">Confirm</button></div></dialog>
   <div class="toast-region" id="toasts" aria-live="polite"></div>
   <script>
     const TOKEN = "__TM_TOKEN__";
@@ -508,10 +922,12 @@ export const webAppHtml = String.raw`<!doctype html>
       data: null, view: location.hash.slice(1) || "dashboard", skillFilter: "all", mcpFilter: "all", hookFilter: "codex",
       skillSearch: "", mcpSearch: "", skillSearchDraft: "", mcpSearchDraft: "", formHandler: null, confirmResolve: null,
       sessions: [], sessionsLoaded: false, sessionsLoading: false, sessionProvider: "all", sessionSearch: "", sessionSearchDraft: "",
-      selectedSessionKey: "", sessionTranscript: null, sessionMessagesLoading: false
+      selectedSessionKey: "", sessionTranscript: null, sessionMessagesLoading: false, sessionsRequestId: 0, sessionMessageRequestId: 0,
+      agentTool: "codex", agentUsage: {}, agentUsageLoading: {}, hiddenTrendSeries: [], hiddenModelSeries: []
     };
     const titles = {
       dashboard: ["Workspace overview", "Dashboard"],
+      agents: ["Local usage telemetry", "Agent details"],
       skills: ["Managed resources", "Skills"],
       mcp: ["Managed integrations", "MCP Servers"],
       hooks: ["Agent automation", "Hooks"],
@@ -670,26 +1086,33 @@ export const webAppHtml = String.raw`<!doctype html>
       if (!state.data) return;
       if (!titles[state.view]) state.view = "dashboard";
       const title = titles[state.view];
-      document.getElementById("page-eyebrow").textContent = title[0];
+      document.getElementById("page-subtitle").textContent = title[0];
       document.getElementById("page-title").textContent = title[1];
-      document.getElementById("page-index").textContent = String(Object.keys(titles).indexOf(state.view) + 1).padStart(2, "0");
-      document.querySelectorAll("[data-view]").forEach(function(node) { node.classList.toggle("active", node.dataset.view === state.view); });
+      document.querySelectorAll("[data-view]").forEach(function(node) {
+        const active = node.dataset.view === state.view;
+        node.classList.toggle("active", active);
+        if (active) node.setAttribute("aria-current", "page");
+        else node.removeAttribute("aria-current");
+      });
       document.getElementById("top-actions").innerHTML = topActions();
       if (state.view === "dashboard") renderDashboard();
+      if (state.view === "agents") renderAgents();
       if (state.view === "skills") renderSkills();
       if (state.view === "mcp") renderMcp();
       if (state.view === "hooks") renderHooks();
       if (state.view === "sessions") renderSessions();
       view.classList.toggle("sessions-content", state.view === "sessions");
-      view.classList.remove("view-enter");
-      void view.offsetWidth;
-      view.classList.add("view-enter");
+    }
+    function refreshIcon() {
+      return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.3 6.7L3 16"></path><path d="M3 21v-5h5"></path><path d="M3 12a9 9 0 0 1 15.3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg>';
     }
     function topActions() {
-      const refresh = '<button class="btn icon" data-action="refresh" aria-label="Refresh" title="Refresh">↻</button>';
+      const icon = refreshIcon();
+      const refresh = '<button class="btn icon" data-action="refresh" aria-label="Refresh" title="Refresh">' + icon + '</button>';
       if (state.view === "skills") return refresh + '<button class="btn primary" data-action="add-skill" title="Add a managed skill" aria-label="Add a managed skill">Add</button>';
       if (state.view === "mcp") return refresh + '<button class="btn primary" data-action="add-mcp" title="Add an MCP server" aria-label="Add an MCP server">Add</button>';
-      if (state.view === "sessions") return '<button class="btn icon" data-action="refresh-sessions" aria-label="Rescan sessions" title="Rescan sessions">↻</button>';
+      if (state.view === "sessions") return '<button class="btn icon" data-action="refresh-sessions" aria-label="Rescan sessions" title="Rescan sessions">' + icon + '</button>';
+      if (state.view === "agents") return '<button class="btn icon" data-action="refresh-agent-usage" aria-label="Refresh agent usage" title="Refresh agent usage">' + icon + '</button>';
       return refresh;
     }
     function metrics() {
@@ -707,6 +1130,198 @@ export const webAppHtml = String.raw`<!doctype html>
       view.innerHTML = metrics() +
         '<div class="manager-path" aria-label="Manager home: ' + esc(state.data.status.root) + '"><code title="' + esc(state.data.status.root) + '">' + esc(state.data.status.root) + '</code></div>' +
         '<section class="section">' + sectionHead("Agent readiness", state.data.agents.length + " configured destinations", "") + agentTable(state.data.agents) + '</section>';
+    }
+    function usageProvider(tool) { return tool === "claude_code" ? "claude" : "codex"; }
+    function usageAgents() {
+      const installed = new Set(state.data.status.tools.filter(function(tool) { return tool.installed; }).map(function(tool) { return tool.key; }));
+      return state.data.agents.filter(function(agent) { return (agent.tool === "codex" || agent.tool === "claude_code") && installed.has(agent.tool); });
+    }
+    function modelSeriesKey(model) { return JSON.stringify([model.model, model.effort || ""]); }
+    function seriesVisible(collection, key) { return !collection.includes(key); }
+    function toggleSeries(collection, key) {
+      const index = collection.indexOf(key);
+      if (index >= 0) collection.splice(index, 1);
+      else collection.push(key);
+    }
+    function compactNumber(value) {
+      return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(Number(value || 0));
+    }
+    function arrowRightIcon() {
+      return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>';
+    }
+    function usageMetric(label, value, note, action) {
+      const content = '<div class="usage-label">' + esc(label) + '</div><div class="usage-value">' + esc(value) + '</div><div class="usage-note">' + esc(note) + (action ? arrowRightIcon() : '') + '</div>';
+      return action
+        ? '<button type="button" class="usage-metric usage-metric-link" data-action="' + esc(action) + '" aria-label="' + esc(note) + '">' + content + '</button>'
+        : '<div class="usage-metric">' + content + '</div>';
+    }
+    function usageDayLabel(value) {
+      return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(value + "T00:00:00"));
+    }
+    function formatDuration(value) {
+      if (value == null || !Number.isFinite(Number(value))) return "--";
+      const ms = Number(value);
+      if (ms < 1000) return Math.round(ms) + " ms";
+      if (ms < 60000) return (ms / 1000).toFixed(ms < 10000 ? 1 : 0) + " s";
+      return (ms / 60000).toFixed(1) + " min";
+    }
+    function renderUsageTrend(usage) {
+      const days = usage.dailyUsage || [];
+      const total = days.reduce(function(sum, day) { return sum + Number(day.totalTokens || 0); }, 0);
+      const series = [
+        { id: "input", label: "Input", color: "#4361a8", value: function(day) { return Math.max(0, Number(day.inputTokens || 0) - Number(day.cachedInputTokens || 0) - Number(day.cacheWriteTokens || 0)); } },
+        { id: "output", label: "Output", color: "#6da926", value: function(day) { return Number(day.outputTokens || 0); } },
+        { id: "cache-creation", label: "Cache Creation", color: "#d09b27", value: function(day) { return Number(day.cacheWriteTokens || 0); } },
+        { id: "cache-read", label: "Cache Read", color: "#2e7d70", value: function(day) { return Number(day.cachedInputTokens || 0); } },
+      ];
+      const visibleSeries = series.filter(function(item) { return seriesVisible(state.hiddenTrendSeries, item.id); });
+      const left = 54, right = 706, top = 18, bottom = 210;
+      const maxTokens = Math.max(1, ...days.flatMap(function(day) { return visibleSeries.map(function(item) { return item.value(day); }); }));
+      const x = function(index) { return days.length < 2 ? (left + right) / 2 : left + index * (right - left) / (days.length - 1); };
+      const tokenY = function(value) { return bottom - Number(value || 0) / maxTokens * (bottom - top); };
+      const rateY = function(value) { return bottom - Math.max(0, Math.min(1, Number(value || 0))) * (bottom - top); };
+      const grid = [0, .25, .5, .75, 1].map(function(ratio) {
+        const y = bottom - ratio * (bottom - top);
+        return '<line class="chart-grid" x1="' + left + '" y1="' + y + '" x2="' + right + '" y2="' + y + '"></line>' +
+          '<text class="chart-axis-label" x="' + (left - 9) + '" y="' + (y + 3) + '" text-anchor="end">' + esc(compactNumber(maxTokens * ratio)) + '</text>' +
+          '<text class="chart-axis-label" x="' + (right + 9) + '" y="' + (y + 3) + '">' + Math.round(ratio * 100) + '%</text>';
+      }).join("");
+      const lines = visibleSeries.map(function(item) {
+        const points = days.map(function(day, index) { return x(index).toFixed(1) + ',' + tokenY(item.value(day)).toFixed(1); }).join(' ');
+        const dots = days.map(function(day, index) {
+          const value = item.value(day);
+          return '<circle class="chart-dot" style="--series:' + item.color + '" cx="' + x(index).toFixed(1) + '" cy="' + tokenY(value).toFixed(1) + '" r="3"><title>' + esc(usageDayLabel(day.date) + ' · ' + item.label + ': ' + new Intl.NumberFormat().format(value)) + '</title></circle>';
+        }).join('');
+        return '<polyline class="chart-series" style="--series:' + item.color + '" points="' + points + '"></polyline>' + dots;
+      }).join('');
+      const ratePoints = days.map(function(day, index) { return x(index).toFixed(1) + ',' + rateY(day.cacheHitRate).toFixed(1); }).join(' ');
+      const rateVisible = seriesVisible(state.hiddenTrendSeries, "cache-hit-rate");
+      const rateDots = rateVisible ? days.map(function(day, index) {
+        return '<circle class="chart-dot" style="--series:#8a64a8" cx="' + x(index).toFixed(1) + '" cy="' + rateY(day.cacheHitRate).toFixed(1) + '" r="3"><title>' + esc(usageDayLabel(day.date) + ' · Cache Hit Rate: ' + (Number(day.cacheHitRate || 0) * 100).toFixed(1) + '%') + '</title></circle>';
+      }).join('') : '';
+      const labels = days.map(function(day, index) { return '<text class="chart-axis-label" x="' + x(index).toFixed(1) + '" y="238" text-anchor="middle">' + esc(usageDayLabel(day.date)) + '</text>'; }).join('');
+      const legend = series.map(function(item) {
+        const visible = seriesVisible(state.hiddenTrendSeries, item.id);
+        return '<button type="button" data-action="toggle-trend-series" data-series-key="' + item.id + '" aria-pressed="' + visible + '" style="--series:' + item.color + '"><i></i>' + esc(item.label) + '</button>';
+      }).join('') + '<button type="button" class="dashed" data-action="toggle-trend-series" data-series-key="cache-hit-rate" aria-pressed="' + rateVisible + '" style="--series:#8a64a8"><i></i>Cache Hit Rate</button>';
+      const rateLine = rateVisible ? '<polyline class="chart-series cache-rate" style="--series:#8a64a8" points="' + ratePoints + '"></polyline>' + rateDots : '';
+      const svg = '<svg viewBox="0 0 760 252" role="img" aria-label="Seven-day Input, Output, Cache Creation, Cache Read and Cache Hit Rate trend">' + grid + lines + rateLine + labels + '</svg>';
+      return '<section class="analytics-panel" aria-labelledby="usage-trend-title"><div class="analytics-head"><div><h3 id="usage-trend-title">Token usage trend</h3><p>7 days · token volume and cache efficiency</p></div><strong class="analytics-total">' + esc(compactNumber(total)) + ' total</strong></div><div class="trend-legend">' + legend + '</div><div class="usage-trend-chart">' + svg + '</div></section>';
+    }
+    function renderModelLadder(usage) {
+      const models = usage.todayModels || [];
+      const recommended = usage.recommendation || (usage.recommendedModel ? {
+        model: usage.recommendedModel,
+        effort: usage.recommendedEffort || null,
+        observed: true,
+        source: "local-observation",
+        candidateCount: models.length,
+        rationale: "Compared from locally completed turns.",
+      } : null);
+      if (!models.length) return '<section class="analytics-panel" aria-labelledby="model-distribution-title"><div class="analytics-head"><div><h3 id="model-distribution-title">Current model distribution</h3><p>Today · local session events</p></div></div><div class="analytics-empty">No model usage recorded today.</div></section>';
+      const colors = ["#6da926", "#2e7d70", "#d09b27", "#806bb0", "#cb6657", "#65746d"];
+      const allTotal = models.reduce(function(sum, model) { return sum + Number(model.totalTokens || 0); }, 0);
+      const visibleModels = models.filter(function(model) { return seriesVisible(state.hiddenModelSeries, modelSeriesKey(model)); });
+      const total = visibleModels.reduce(function(sum, model) { return sum + Number(model.totalTokens || 0); }, 0);
+      const circumference = 2 * Math.PI * 54;
+      let offset = 0;
+      const segments = visibleModels.map(function(model) {
+        const index = models.indexOf(model);
+        const length = total > 0 ? Number(model.totalTokens || 0) / total * circumference : 0;
+        const segment = '<circle class="model-donut-segment" style="--series:' + colors[index % colors.length] + '" cx="85" cy="85" r="54" transform="rotate(-90 85 85)" stroke-dasharray="' + length.toFixed(2) + ' ' + Math.max(0, circumference - length).toFixed(2) + '" stroke-dashoffset="-' + offset.toFixed(2) + '"><title>' + esc(model.model + (model.effort ? ' · ' + model.effort : '') + ': ' + compactNumber(model.totalTokens) + ' tokens') + '</title></circle>';
+        offset += length;
+        return segment;
+      }).join('');
+      const legend = models.map(function(model, index) {
+        const key = modelSeriesKey(model);
+        const visible = seriesVisible(state.hiddenModelSeries, key);
+        const share = allTotal > 0 ? Number(model.totalTokens || 0) / allTotal * 100 : 0;
+        return '<button type="button" class="model-legend-row" data-action="toggle-model-series" data-series-key="' + esc(key) + '" aria-pressed="' + visible + '" style="--series:' + colors[index % colors.length] + '"><i></i><span title="' + esc(model.model) + '">' + esc(model.model) + '</span><em>' + esc(model.effort || '--') + '</em><strong>' + share.toFixed(1) + '%</strong></button>';
+      }).join('');
+      const hasTiming = models.some(function(model) { return model.averageResponseMs != null || model.latestResponseMs != null; });
+      const timingHead = hasTiming ? '<th>Avg response</th><th>Latest response</th>' : '';
+      const rows = models.map(function(model) {
+        const completion = model.completionRate == null ? '--' : (Number(model.completionRate) * 100).toFixed(0) + '% (' + model.completedCount + '/' + model.requestCount + ')';
+        const timing = hasTiming ? '<td>' + esc(formatDuration(model.averageResponseMs)) + '</td><td>' + esc(formatDuration(model.latestResponseMs)) + '</td>' : '';
+        return '<tr><td class="model-name-cell" title="' + esc(model.model) + '">' + esc(model.model) + '</td><td><span class="effort-badge">' + esc(model.effort || '--') + '</span></td><td>' + new Intl.NumberFormat().format(model.requestCount || 0) + '</td><td>' + esc(compactNumber(model.totalTokens)) + '</td><td>$' + Number(model.estimatedCostUsd || 0).toFixed(4) + '</td><td class="model-completion">' + esc(completion) + '</td>' + timing + '</tr>';
+      }).join('');
+      const recommendation = recommended
+        ? '<div class="model-recommendation"><div class="model-recommendation-copy"><span>Best fit today</span><strong>' + esc(recommended.model) + (recommended.effort ? ' · ' + esc(recommended.effort) : '') + '</strong></div><small title="' + esc(recommended.rationale || '') + '"><b>' + (recommended.source === "model-catalog" ? 'Available-model estimate' : 'Local fallback') + '</b> · ' + esc(recommended.rationale || '') + (recommended.source === "model-catalog" && !recommended.observed ? ' · Not yet observed locally' : '') + '</small></div>'
+        : '';
+      const donut = '<div class="model-donut-wrap"><svg class="model-donut" viewBox="0 0 170 170" role="img" aria-label="Today model token distribution"><circle class="model-donut-track" cx="85" cy="85" r="54"></circle>' + segments + '<text class="model-donut-total" x="85" y="82">' + esc(compactNumber(total)) + '</text><text class="model-donut-label" x="85" y="99">tokens</text></svg><div class="model-legend">' + legend + '</div></div>';
+      const table = '<div class="model-table-wrap"><table class="model-table"><thead><tr><th>Model</th><th>Effort</th><th>Requests</th><th>Tokens</th><th>Est. cost</th><th>Completion</th>' + timingHead + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+      return '<section class="analytics-panel" aria-labelledby="model-distribution-title"><div class="analytics-head"><div><h3 id="model-distribution-title">Current model distribution</h3><p>Today · completion means a normal end signal in local logs</p></div><strong class="analytics-total">' + models.length + ' configurations</strong></div><div class="model-distribution-body">' + donut + table + '</div>' + recommendation + '</section>';
+    }
+    function renderAgentAnalytics(usage) {
+      return '<div class="agent-analytics-grid">' + renderModelLadder(usage) + renderUsageTrend(usage) + '</div>';
+    }
+    function refreshAgentAnalytics() {
+      const current = view.querySelector(".agent-analytics-grid");
+      const usage = state.agentUsage[state.agentTool];
+      if (current && usage) current.outerHTML = renderAgentAnalytics(usage);
+      else renderAgents();
+    }
+    function renderAgents() {
+      const agents = usageAgents();
+      if (!agents.length) {
+        state.agentTool = "";
+        view.innerHTML = empty("No supported Agents detected", "Install Codex or Claude Code to view local usage telemetry.");
+        return;
+      }
+      if (!agents.some(function(agent) { return agent.tool === state.agentTool; })) state.agentTool = agents[0]?.tool || "codex";
+      const selected = agents.find(function(agent) { return agent.tool === state.agentTool; });
+      const picker = agents.map(function(agent) {
+        return '<button type="button" class="agent-picker-button" data-action="select-agent-usage" data-tool="' + esc(agent.tool) + '" aria-pressed="' + (agent.tool === state.agentTool) + '"><span class="agent-glyph ' + esc(agent.tool) + '">' + toolIcon(agent.tool) + '</span><span>' + esc(agent.displayName) + '</span></button>';
+      }).join("");
+      const usage = state.agentUsage[state.agentTool];
+      let body;
+      if (state.agentUsageLoading[state.agentTool] && !usage) {
+        body = '<div class="usage-grid usage-loading" aria-busy="true" aria-label="Loading agent usage">' + Array.from({ length: 4 }, function() { return '<div class="usage-metric"><span class="skeleton-line short"></span><span class="skeleton-line value"></span><span class="skeleton-line"></span></div>'; }).join("") + '</div>';
+      } else if (usage) {
+        body = '<div class="usage-grid">' +
+          usageMetric("Token usage", compactNumber(usage.totalTokens), "Local session logs") +
+          usageMetric("Estimated cost", "$" + Number(usage.estimatedCostUsd || 0).toFixed(2), "Provider default rates") +
+          usageMetric("Sessions", new Intl.NumberFormat().format(usage.sessionCount || 0), "Open filtered sessions", "open-agent-sessions") +
+          usageMetric("Cache hit rate", ((usage.cacheHitRate || 0) * 100).toFixed(1) + "%", "Cached input share") +
+        '</div>' + renderAgentAnalytics(usage);
+      } else {
+        body = empty("Usage unavailable", "Local usage data could not be read for this Agent.");
+      }
+      view.innerHTML = '<section class="agent-detail-shell"><div class="agent-detail-head"><div class="agent-identity"><span class="agent-identity-mark ' + esc(state.agentTool) + '">' + toolIcon(state.agentTool) + '</span><div><h2>' + esc(selected?.displayName || toolLabel(state.agentTool)) + '</h2><p>Usage across local sessions</p></div></div><div class="agent-picker" role="group" aria-label="Select Agent">' + picker + '</div></div>' + body + '</section>';
+      if (!usage && !state.agentUsageLoading[state.agentTool]) void loadAgentUsage(state.agentTool);
+    }
+    async function loadAgentUsage(tool, force) {
+      if (state.agentUsageLoading[tool] || (!force && state.agentUsage[tool])) return;
+      state.agentUsageLoading[tool] = true;
+      if (state.view === "agents") renderAgents();
+      try {
+        const payload = await api("/api/agent-usage?provider=" + encodeURIComponent(usageProvider(tool)));
+        state.agentUsage[tool] = payload.usage;
+      } catch (error) { toast(error.message, true); }
+      finally {
+        state.agentUsageLoading[tool] = false;
+        if (state.view === "agents" && state.agentTool === tool) renderAgents();
+      }
+    }
+    function navigateView(next) {
+      const commit = function() {
+        state.view = next;
+        history.pushState(null, "", "#" + next);
+        render();
+      };
+      if (document.startViewTransition && !matchMedia("(prefers-reduced-motion: reduce)").matches) document.startViewTransition(commit);
+      else commit();
+    }
+    async function openAgentSessions() {
+      state.sessionProvider = usageProvider(state.agentTool);
+      state.sessionSearch = "";
+      state.sessionSearchDraft = "";
+      state.sessionTranscript = null;
+      const first = state.sessions.find(function(session) { return session.providerId === state.sessionProvider; });
+      state.selectedSessionKey = first ? sessionKey(first) : "";
+      navigateView("sessions");
+      if (!state.sessionsLoaded && !state.sessionsLoading) await loadSessions();
+      else if (first) await loadSelectedSessionMessages();
     }
     function sessionKey(session) { return session.providerId + ":" + session.sessionId; }
     function selectedSession() { return state.sessions.find(function(session) { return sessionKey(session) === state.selectedSessionKey; }) || null; }
@@ -745,6 +1360,7 @@ export const webAppHtml = String.raw`<!doctype html>
       });
     }
     function renderSessions() {
+      if (state.view !== "sessions") return;
       const sessions = filteredSessions();
       const visible = sessions.slice(0, 300);
       const selected = selectedSession();
@@ -786,6 +1402,7 @@ export const webAppHtml = String.raw`<!doctype html>
         '<aside class="session-toc"><div class="session-toc-title">Conversation index</div>' + tocRows + '</aside></div></section>';
     }
     function renderSelectedSession() {
+      if (state.view !== "sessions") return;
       const key = state.selectedSessionKey;
       view.querySelectorAll(".session-item").forEach(function(item) {
         item.setAttribute("aria-current", String(item.dataset.sessionKey === key));
@@ -796,37 +1413,50 @@ export const webAppHtml = String.raw`<!doctype html>
     }
     function basenameForDisplay(path) { return String(path || "").split(/[\\/]/).pop() || ""; }
     async function loadSessions(button) {
+      const requestId = ++state.sessionsRequestId;
       state.sessionsLoading = true;
       if (state.view === "sessions") renderSessions();
       setButtonLoading(button, true, "Scanning...");
       try {
         const payload = await api("/api/sessions");
+        if (requestId !== state.sessionsRequestId) return;
         state.sessions = payload.sessions;
         state.sessionsLoaded = true;
-        if (!selectedSession()) state.selectedSessionKey = state.sessions[0] ? sessionKey(state.sessions[0]) : "";
+        const visible = filteredSessions();
+        if (!visible.some(function(session) { return sessionKey(session) === state.selectedSessionKey; })) {
+          state.selectedSessionKey = visible[0] ? sessionKey(visible[0]) : "";
+          state.sessionTranscript = null;
+        }
         state.sessionsLoading = false;
-        renderSessions();
-        if (selectedSession()) await loadSelectedSessionMessages();
+        if (state.view === "sessions") renderSessions();
+        if (state.view === "sessions" && selectedSession()) await loadSelectedSessionMessages();
       } catch (error) {
+        if (requestId !== state.sessionsRequestId) return;
         state.sessionsLoading = false;
         toast(error.message, true);
-        renderSessions();
+        if (state.view === "sessions") renderSessions();
       } finally { setButtonLoading(button, false); }
     }
     async function loadSelectedSessionMessages() {
       const session = selectedSession();
       if (!session) return;
       const key = sessionKey(session);
+      const requestId = ++state.sessionMessageRequestId;
       state.sessionMessagesLoading = true;
       state.sessionTranscript = null;
-      renderSelectedSession();
+      if (state.view === "sessions") renderSelectedSession();
       try {
         const query = new URLSearchParams({ provider: session.providerId, sessionId: session.sessionId, sourcePath: session.sourcePath });
         const transcript = await api("/api/session-messages?" + query.toString());
-        if (state.selectedSessionKey !== key) return;
+        if (requestId !== state.sessionMessageRequestId || state.selectedSessionKey !== key) return;
         state.sessionTranscript = Object.assign({ sessionKey: key }, transcript);
       } catch (error) { toast(error.message, true); }
-      finally { if (state.selectedSessionKey === key) { state.sessionMessagesLoading = false; renderSelectedSession(); } }
+      finally {
+        if (requestId === state.sessionMessageRequestId && state.selectedSessionKey === key) {
+          state.sessionMessagesLoading = false;
+          if (state.view === "sessions") renderSelectedSession();
+        }
+      }
     }
     async function copyText(value, message) {
       try {
@@ -891,13 +1521,13 @@ export const webAppHtml = String.raw`<!doctype html>
         const name = manageable
           ? '<button class="name-button mono" data-action="edit-skill" data-name="' + esc(skill.name) + '">' + esc(skill.name) + '</button>'
           : '<button class="name-button mono" data-action="view-agent-skill" data-name="' + esc(skill.name) + '" data-tool="' + esc(filter) + '">' + esc(skill.name) + '</button>';
-        return '<tr><td>' + name + '</td>' +
-          (filter !== "all" ? '<td><span class="tag ' + (skill.scope === 'system' ? 'amber' : 'green') + '">' + esc(skill.scope || "user") + '</span></td>' : '') + '<td><div class="truncate">' + esc(skill.description || "No description") + '</div></td>' +
-          '<td class="mono muted">' + esc((skill.updated_at || "").replace("T", " ")) + '</td>' +
-          (filter === "all" ? '<td>' + syncAction + '</td>' : '') +
-          (actions && filter !== "all" ? '<td><div class="row-actions">' + removeAction + '</div></td>' : '') + '</tr>';
+        return '<tr><td data-label="Name">' + name + '</td>' +
+          (filter !== "all" ? '<td data-label="Scope"><span class="tag ' + (skill.scope === 'system' ? 'amber' : 'green') + '">' + esc(skill.scope || "user") + '</span></td>' : '') + '<td data-label="Description"><div class="truncate">' + esc(skill.description || "No description") + '</div></td>' +
+          '<td data-label="Updated" class="mono muted">' + esc((skill.updated_at || "").replace("T", " ")) + '</td>' +
+          (filter === "all" ? '<td data-label="Agents">' + syncAction + '</td>' : '') +
+          (actions && filter !== "all" ? '<td data-label="Actions"><div class="row-actions">' + removeAction + '</div></td>' : '') + '</tr>';
       }).join("");
-      return '<div class="table-wrap"><table><thead><tr><th>Name</th>' + (filter !== "all" ? '<th>Scope</th>' : '') + '<th>Description</th><th>Updated</th>' + (filter === "all" ? '<th>Agents</th>' : '') + (actions && filter !== "all" ? '<th aria-label="Actions"></th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+      return '<div class="table-wrap mobile-table-wrap"><table><thead><tr><th>Name</th>' + (filter !== "all" ? '<th>Scope</th>' : '') + '<th>Description</th><th>Updated</th>' + (filter === "all" ? '<th>Agents</th>' : '') + (actions && filter !== "all" ? '<th aria-label="Actions"></th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
     }
     function renderSkills() {
       const resources = filteredResources("skill", state.skillFilter).filter(function(skill) { return state.skillFilter !== "all" || skill.scope !== "system"; });
@@ -931,9 +1561,9 @@ export const webAppHtml = String.raw`<!doctype html>
           ? '<button class="name-button mono" data-action="view-agent-mcp" data-name="' + esc(server.name) + '" data-tool="' + esc(state.mcpFilter) + '">' + esc(server.name) + '</button>'
           : '<span class="mono"><strong>' + esc(server.name) + '</strong></span>';
         const agentDelete = state.mcpFilter !== "all" ? '<button class="delete-icon" data-action="delete-mcp-agent" data-name="' + esc(server.name) + '" data-tool="' + esc(state.mcpFilter) + '" aria-label="Remove ' + esc(server.name) + ' from ' + esc(toolLabel(state.mcpFilter)) + '" title="' + (system ? 'System MCP servers are read only' : 'Remove from ' + esc(toolLabel(state.mcpFilter))) + '"' + (system ? ' disabled' : '') + '>' + trashIcon() + '</button>' : '';
-        return '<tr><td>' + name + '</td>' + (state.mcpFilter !== "all" ? '<td><span class="tag ' + (system ? 'amber' : 'green') + '">' + esc(server.scope || "user") + '</span></td>' : '') + '<td><span class="tag">' + esc(server.transport) + '</span></td><td><div class="command" title="' + esc(endpoint) + '">' + esc(endpoint) + '</div></td><td><span class="tag ' + (server.enabled ? 'green' : 'red') + '">' + (server.enabled ? 'enabled' : 'disabled') + '</span></td>' + (state.mcpFilter === "all" ? '<td>' + syncAction + '</td>' : '<td><div class="row-actions">' + agentDelete + '</div></td>') + '</tr>';
+        return '<tr><td data-label="Name">' + name + '</td>' + (state.mcpFilter !== "all" ? '<td data-label="Scope"><span class="tag ' + (system ? 'amber' : 'green') + '">' + esc(server.scope || "user") + '</span></td>' : '') + '<td data-label="Transport"><span class="tag">' + esc(server.transport) + '</span></td><td data-label="Endpoint"><div class="command" title="' + esc(endpoint) + '">' + esc(endpoint) + '</div></td><td data-label="Status"><span class="tag ' + (server.enabled ? 'green' : 'red') + '">' + (server.enabled ? 'enabled' : 'disabled') + '</span></td>' + (state.mcpFilter === "all" ? '<td data-label="Agents">' + syncAction + '</td>' : '<td data-label="Actions"><div class="row-actions">' + agentDelete + '</div></td>') + '</tr>';
       }).join("");
-      const table = rows ? '<div class="table-wrap"><table><thead><tr><th>Name</th>' + (state.mcpFilter !== "all" ? '<th>Scope</th>' : '') + '<th>Transport</th><th>Endpoint</th><th>Status</th><th>' + (state.mcpFilter === "all" ? 'Agents' : '<span class="sr-only">Actions</span>') + '</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : state.mcpSearch.trim()
+      const table = rows ? '<div class="table-wrap mobile-table-wrap"><table><thead><tr><th>Name</th>' + (state.mcpFilter !== "all" ? '<th>Scope</th>' : '') + '<th>Transport</th><th>Endpoint</th><th>Status</th><th>' + (state.mcpFilter === "all" ? 'Agents' : '<span class="sr-only">Actions</span>') + '</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : state.mcpSearch.trim()
         ? empty("No matching MCP servers", "No managed MCP servers match your search.")
         : state.mcpFilter === "all"
         ? empty("No MCP servers", "The MCP registry is empty.")
@@ -952,10 +1582,10 @@ export const webAppHtml = String.raw`<!doctype html>
       const rows = hook.events.map(function(event) {
         const installedClass = event.installed ? " installed" : "";
         const activeClass = event.active && event.active < event.installed ? " partial" : event.active ? " installed" : "";
-        return '<tr><td><button class="hook-event-button" data-action="edit-hooks" data-tool="' + esc(hook.tool) + '" data-event="' + esc(event.name) + '">' + esc(event.name) + '</button></td>' +
-          '<td><span class="hook-count' + installedClass + '">' + event.installed + '</span></td><td><span class="hook-count' + activeClass + '">' + event.active + '</span></td><td class="muted">' + esc(event.description) + '</td></tr>';
+        return '<tr><td data-label="Event"><button class="hook-event-button" data-action="edit-hooks" data-tool="' + esc(hook.tool) + '" data-event="' + esc(event.name) + '">' + esc(event.name) + '</button></td>' +
+          '<td data-label="Installed"><span class="hook-count' + installedClass + '">' + event.installed + '</span></td><td data-label="Active"><span class="hook-count' + activeClass + '">' + event.active + '</span></td><td data-label="Description" class="muted">' + esc(event.description) + '</td></tr>';
       }).join("");
-      const table = rows ? '<div class="table-wrap"><table><thead><tr><th>Event</th><th>Installed</th><th>Active</th><th>Description</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : empty("Plugin based hooks", "OpenCode hooks are implemented in plugin code and are read only here.");
+      const table = rows ? '<div class="table-wrap mobile-table-wrap"><table><thead><tr><th>Event</th><th>Installed</th><th>Active</th><th>Description</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : empty("Plugin based hooks", "OpenCode hooks are implemented in plugin code and are read only here.");
       view.innerHTML = '<section>' + sectionHead(hook.displayName + " hooks", hook.eventCount + " events configured · " + hook.commandCount + " handlers", "") + '<div class="hook-agent-bar" role="group" aria-label="Select Agent">' + agents + '</div>' + table + '</section>';
     }
     function agentTable(agents) {
@@ -969,13 +1599,22 @@ export const webAppHtml = String.raw`<!doctype html>
         const skillPaths = (agent.skillsPaths && agent.skillsPaths.length ? agent.skillsPaths : [agent.skillsPath]).map(function(path) {
           return '<div class="agent-path" title="' + esc(path) + '">' + esc(path) + '</div>';
         }).join("");
-        return '<tr><td><span class="dot ' + (installed && installed.installed ? 'online' : '') + '"></span></td><td><strong>' + esc(agent.displayName) + '</strong><div class="mono muted">' + esc(agent.tool) + '</div></td>' +
-          '<td><strong>' + syncedSkills + ' / ' + agent.skills.length + '</strong><div class="muted">synced / installed</div></td><td><strong>' + syncedMcp + ' / ' + agent.mcpServers.length + '</strong><div class="muted">synced / installed</div></td>' +
-          '<td><div class="agent-paths">' + skillPaths + '</div></td><td><div class="agent-path" title="' + esc(agent.mcpPath) + '">' + esc(agent.mcpPath) + '</div></td></tr>';
+        const detected = Boolean(installed && installed.installed);
+        const agentName = agent.tool === "codex" || agent.tool === "claude_code"
+          ? '<button class="name-button agent-name-button" data-action="open-agent-usage" data-tool="' + esc(agent.tool) + '">' + esc(agent.displayName) + '</button>'
+          : '<strong>' + esc(agent.displayName) + '</strong>';
+        return '<tr><td data-label="Status"><span class="agent-status"><span class="dot ' + (detected ? 'online' : '') + '" aria-hidden="true"></span><span class="agent-status-copy">' + (detected ? 'Detected' : 'Not found') + '</span></span></td><td data-label="Agent">' + agentName + '<div class="mono muted">' + esc(agent.tool) + '</div></td>' +
+          '<td data-label="Skills"><strong>' + syncedSkills + ' / ' + agent.skills.length + '</strong><div class="muted">synced / installed</div></td><td data-label="MCP"><strong>' + syncedMcp + ' / ' + agent.mcpServers.length + '</strong><div class="muted">synced / installed</div></td>' +
+          '<td data-label="Skill paths"><div class="agent-paths">' + skillPaths + '</div></td><td data-label="MCP config"><div class="agent-path" title="' + esc(agent.mcpPath) + '">' + esc(agent.mcpPath) + '</div></td></tr>';
       }).join("");
-      return '<div class="table-wrap"><table class="agent-table"><colgroup><col class="status-column"><col class="agent-column"><col class="count-column"><col class="count-column"><col class="skill-path-column"><col class="mcp-path-column"></colgroup><thead><tr><th></th><th>Agent</th><th>Skills</th><th>MCP</th><th>Skill paths</th><th>MCP config</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+      return '<div class="table-wrap mobile-table-wrap"><table class="agent-table"><colgroup><col class="status-column"><col class="agent-column"><col class="count-column"><col class="count-column"><col class="skill-path-column"><col class="mcp-path-column"></colgroup><thead><tr><th>Status</th><th>Agent</th><th>Skills</th><th>MCP</th><th>Skill paths</th><th>MCP config</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
     }
 
+    function firstVisibleControl(container) {
+      return [...container.querySelectorAll('input:not([type="hidden"]), textarea, select, [data-select-trigger]')].find(function(control) {
+        return !control.disabled && control.getClientRects().length > 0;
+      });
+    }
     function openForm(title, body, submit, handler, danger) {
       document.getElementById("form-dialog").classList.remove("mcp-add-dialog");
       document.getElementById("form-title").textContent = title;
@@ -988,7 +1627,7 @@ export const webAppHtml = String.raw`<!doctype html>
       state.formHandler = handler;
       document.getElementById("form-dialog").showModal();
       requestAnimationFrame(function() {
-        document.querySelector("#form-body input:not([type=hidden]), #form-body [data-select-trigger], #form-body textarea")?.focus();
+        firstVisibleControl(document.getElementById("form-body"))?.focus();
       });
     }
     async function openEditHooks(tool, eventName, button) {
@@ -1352,7 +1991,9 @@ export const webAppHtml = String.raw`<!doctype html>
     function confirmAction(title, copy) {
       document.getElementById("confirm-title").textContent = title;
       document.getElementById("confirm-copy").textContent = copy;
-      document.getElementById("confirm-dialog").showModal();
+      const dialog = document.getElementById("confirm-dialog");
+      dialog.showModal();
+      requestAnimationFrame(function() { dialog.querySelector('.dialog-actions [data-confirm="false"]')?.focus(); });
       return new Promise(function(resolve) { state.confirmResolve = resolve; });
     }
     async function removeSkillAction(name, tool, button) {
@@ -1455,8 +2096,22 @@ export const webAppHtml = String.raw`<!doctype html>
         return;
       }
       if (target.dataset.view) {
-        state.view = target.dataset.view; location.hash = state.view; render();
+        navigateView(target.dataset.view);
         if (state.view === "sessions" && !state.sessionsLoaded && !state.sessionsLoading) await loadSessions();
+        return;
+      }
+      if (target.dataset.action === "select-agent-usage") {
+        state.agentTool = target.dataset.tool;
+        renderAgents();
+        return;
+      }
+      if (target.dataset.action === "open-agent-usage") {
+        state.agentTool = target.dataset.tool;
+        navigateView("agents");
+        return;
+      }
+      if (target.dataset.action === "open-agent-sessions") {
+        await openAgentSessions();
         return;
       }
       if (target.dataset.close !== undefined) { target.closest("dialog").close(); return; }
@@ -1479,7 +2134,17 @@ export const webAppHtml = String.raw`<!doctype html>
         return;
       }
       const action = target.dataset.action;
+      if (action === "toggle-trend-series" || action === "toggle-model-series") {
+        const key = target.dataset.seriesKey;
+        toggleSeries(action === "toggle-trend-series" ? state.hiddenTrendSeries : state.hiddenModelSeries, key);
+        refreshAgentAnalytics();
+        requestAnimationFrame(function() {
+          [...document.querySelectorAll('[data-action="' + action + '"]')].find(function(item) { return item.dataset.seriesKey === key; })?.focus();
+        });
+        return;
+      }
       if (action === "refresh") await load(target);
+      if (action === "refresh-agent-usage") await loadAgentUsage(state.agentTool, true);
       if (action === "refresh-sessions") await loadSessions(target);
       if (action === "select-session") {
         event.preventDefault();
@@ -1494,7 +2159,11 @@ export const webAppHtml = String.raw`<!doctype html>
       if (action === "delete-session") await deleteSelectedSession();
       if (action === "session-toc") {
         const message = document.getElementById("session-message-" + target.dataset.messageIndex);
-        if (message) { message.scrollIntoView({ behavior: "smooth", block: "start" }); message.classList.remove("active"); requestAnimationFrame(function() { message.classList.add("active"); }); }
+        if (message) {
+          document.querySelectorAll(".session-message.active").forEach(function(item) { item.classList.remove("active"); });
+          message.scrollIntoView({ behavior: "smooth", block: "start" });
+          requestAnimationFrame(function() { message.classList.add("active"); });
+        }
       }
       if (action === "add-skill") openAddSkill();
       if (action === "toggle-skill-agent") await toggleSkillAgent(target.dataset.name, target.dataset.tool, target.dataset.synced === "true", target);

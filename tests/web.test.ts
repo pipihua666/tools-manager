@@ -26,7 +26,9 @@ async function tempRoot(prefix: string): Promise<string> {
 
 test("serves the web dashboard and protects mutations", async () => {
   const managerHome = await tempRoot("tm-web-home-");
+  const codexHome = await tempRoot("tm-web-codex-");
   process.env.TOOLS_MANAGER_HOME = managerHome;
+  process.env.CODEX_HOME = codexHome;
   await initManager();
   await addMcpServer({
     name: "private-server",
@@ -56,6 +58,7 @@ test("serves the web dashboard and protects mutations", async () => {
     headers: { "sec-fetch-site": "cross-site" },
   }));
   const snapshot = await handler(new Request("http://127.0.0.1:4343/api/snapshot"));
+  const usage = await handler(new Request("http://127.0.0.1:4343/api/agent-usage?provider=codex"));
   const hooks = await handler(new Request("http://127.0.0.1:4343/api/hooks"));
   const snapshotText = await snapshot.text();
   const mcpDetail = await handler(new Request("http://127.0.0.1:4343/api/mcp/private-server"));
@@ -85,7 +88,30 @@ test("serves the web dashboard and protects mutations", async () => {
   expect(html).toContain("test-token");
   expect(html).toContain("const DEV = false;");
   expect(html).not.toContain("Managed inventory");
-  expect(html).not.toContain('data-view="agents"');
+  expect(html).toContain('data-view="agents"');
+  expect(html).toContain('function renderAgents()');
+  expect(html).toContain('/api/agent-usage?provider=');
+  expect(html).toContain('usageMetric("Token usage"');
+  expect(html).toContain('usageMetric("Estimated cost"');
+  expect(html).toContain('usageMetric("Sessions"');
+  expect(html).toContain('usageMetric("Cache hit rate"');
+  expect(html).toContain('"open-agent-sessions"');
+  expect(html).toContain('function renderUsageTrend(usage)');
+  expect(html).toContain('function renderModelLadder(usage)');
+  expect(html).toContain('Current model distribution');
+  expect(html).toContain('Cache Creation');
+  expect(html).toContain('Cache Hit Rate');
+  expect(html).toContain('averageResponseMs');
+  expect(html).toContain('<th>Effort</th>');
+  expect(html).toContain('data-action="toggle-trend-series"');
+  expect(html).toContain('data-action="toggle-model-series"');
+  expect(html).toContain('state.hiddenTrendSeries');
+  expect(html).toContain('state.hiddenModelSeries');
+  expect(html).toContain('tool.installed');
+  expect(html).toContain('No supported Agents detected');
+  expect(html).toContain('requestId !== state.sessionsRequestId');
+  expect(html).toContain('state.view !== "sessions"');
+  expect(html).toContain('document.startViewTransition');
   expect(html).toContain('data-view="sessions"');
   expect(html).toContain('data-view="hooks"');
   expect(html).toContain('function renderHooks()');
@@ -235,12 +261,19 @@ test("serves the web dashboard and protects mutations", async () => {
   expect(html).not.toContain('>Add server</button>');
   expect(html).not.toContain("multiCheckField");
   expect(html).toContain('input.row-check[type="checkbox"]');
+  expect(html).toContain("Available-model estimate");
+  expect(html).toContain("Not yet observed locally");
   expect(html).toContain('width: 16px; min-width: 16px; height: 16px; min-height: 16px;');
   expect(script).toBeTruthy();
   expect(() => new Function(script!)).not.toThrow();
   expect(denied.status).toBe(403);
   expect(crossSite.status).toBe(403);
   expect(snapshotText).toContain("PRIVATE_TOKEN");
+  expect(usage.status).toBe(200);
+  const usagePayload = await usage.json() as { usage: { dailyUsage: unknown[]; todayModels: unknown[]; recommendedModel: string | null } };
+  expect(usagePayload.usage.dailyUsage).toHaveLength(7);
+  expect(usagePayload.usage.todayModels).toEqual([]);
+  expect(usagePayload.usage.recommendedModel).toBeNull();
   expect(hooks.status).toBe(200);
   expect((await hooks.json() as { hooks: unknown[] }).hooks).toHaveLength(4);
   expect(snapshotText).not.toContain("must-not-leak");

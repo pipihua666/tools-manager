@@ -32,7 +32,7 @@ import {
   type McpServer,
 } from "../core/mcp";
 import { backup } from "../core/backup";
-import { deleteSession, launchSession, listSessions, loadSessionMessages, parseSessionProvider } from "../core/session";
+import { deleteSession, getAgentUsage, launchSession, listSessions, loadSessionMessages, parseSessionProvider } from "../core/session";
 import { getAgentHooks, listAgentHooks, updateAgentHooks, updateCodexHookState } from "../core/hook";
 import { toolAdapters } from "../core/tools";
 import { webAppHtml } from "./app";
@@ -133,6 +133,9 @@ async function handleRequest(request: Request, token: string, hostname: string, 
       const providerValue = url.searchParams.get("provider");
       const provider = providerValue && providerValue !== "all" ? parseSessionProvider(providerValue) : undefined;
       return json({ sessions: await listSessions(provider) });
+    }
+    if (request.method === "GET" && url.pathname === "/api/agent-usage") {
+      return json({ usage: await getAgentUsage(parseSessionProvider(requiredQuery(url, "provider"))) });
     }
     if (request.method === "GET" && url.pathname === "/api/session-messages") {
       const provider = parseSessionProvider(requiredQuery(url, "provider"));
