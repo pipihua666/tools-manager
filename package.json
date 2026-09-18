@@ -13,7 +13,7 @@
   },
   "type": "module",
   "bin": {
-    "tm": "./dist/cli.js"
+    "tm": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -35,9 +35,9 @@
     "prepublishOnly": "bun run check",
     "release:dry": "bun run check && npm pack --dry-run",
     "release": "bun run check && npm publish",
-    "release:patch": "bun run check && npm version patch && npm publish",
-    "release:minor": "bun run check && npm version minor && npm publish",
-    "release:major": "bun run check && npm version major && npm publish"
+    "release:patch": "bun run scripts/release.ts patch",
+    "release:minor": "bun run scripts/release.ts minor",
+    "release:major": "bun run scripts/release.ts major"
   },
   "engines": {
     "bun": ">=1.3.0"
