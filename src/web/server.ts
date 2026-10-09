@@ -33,6 +33,7 @@ import {
 } from "../core/mcp";
 import { backup } from "../core/backup";
 import { deleteSession, getAgentUsage, launchSession, listSessions, loadSessionMessages, parseSessionProvider } from "../core/session";
+import { previewSessionPrune, pruneSessions, SESSION_PRUNE_RULES, type SessionPrunePreview } from "../core/session-prune";
 import { getAgentHooks, listAgentHooks, updateAgentHooks, updateCodexHookState } from "../core/hook";
 import { toolAdapters } from "../core/tools";
 import { webAppHtml } from "./app";
@@ -52,6 +53,7 @@ type WebHandlerOptions = {
 type JsonRecord = Record<string, unknown>;
 
 const MAX_BODY_BYTES = 1024 * 1024;
+const prunePlans = new Map<string, { id: string; expiresAt: number; preview: SessionPrunePreview }>();
 
 export async function startWebDashboard(options: WebServerOptions = {}): Promise<void> {
   await initManager();
@@ -133,6 +135,33 @@ async function handleRequest(request: Request, token: string, hostname: string, 
       const providerValue = url.searchParams.get("provider");
       const provider = providerValue && providerValue !== "all" ? parseSessionProvider(providerValue) : undefined;
       return json({ sessions: await listSessions(provider) });
+    }
+    if (request.method === "GET" && url.pathname === "/api/sessions/prune-preview") {
+      const providerValue = url.searchParams.get("provider");
+      const provider = providerValue && providerValue !== "all" ? parseSessionProvider(providerValue) : undefined;
+      const preview = await previewSessionPrune(provider);
+      const planId = randomUUID();
+      for (const [owner, plan] of prunePlans) if (plan.expiresAt < Date.now()) prunePlans.delete(owner);
+      prunePlans.set(token, { id: planId, expiresAt: Date.now() + 10 * 60 * 1000, preview });
+      return json({
+        planId, count: preview.candidates.length, estimatedBytes: preview.estimatedBytes,
+        skippedCount: preview.skippedCount, rules: SESSION_PRUNE_RULES,
+        candidates: preview.candidates.map((candidate) => ({
+          provider: candidate.session.providerId, sessionId: candidate.session.sessionId,
+          title: candidate.session.title, reason: candidate.reason, bytes: candidate.bytes,
+          lastActiveAt: Math.max(candidate.session.lastActiveAt || candidate.session.createdAt || 0, candidate.mtimeMs),
+          dataPaths: candidate.dataPaths,
+        })),
+      });
+    }
+    if (request.method === "POST" && url.pathname === "/api/sessions/prune") {
+      const body = await readBody(request);
+      const plan = prunePlans.get(token);
+      if (!plan || plan.id !== requiredString(body, "planId") || plan.expiresAt < Date.now()) {
+        throw new Error("Cleanup preview expired. Preview the cleanup again.");
+      }
+      prunePlans.delete(token);
+      return json(await pruneSessions(plan.preview));
     }
     if (request.method === "GET" && url.pathname === "/api/agent-usage") {
       return json({ usage: await getAgentUsage(parseSessionProvider(requiredQuery(url, "provider"))) });

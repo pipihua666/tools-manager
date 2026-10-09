@@ -85,6 +85,9 @@ The dashboard manages skills, MCP servers, local Codex and Claude Code sessions,
 * MCP environment and header values are available only through the local detail endpoint and are omitted from the dashboard snapshot.
 * Hooks provides an event-level view for each Agent, including installed and active handler counts. Codex user hooks, Claude Code hooks, and Cursor hooks are editable; trusted Codex plugin hooks can be enabled or disabled, while plugin definitions and OpenCode plugin events remain read only.
 * Sessions scans Codex and Claude Code history, with provider filters, search, on-demand transcripts, resume commands, and guarded deletion.
+* **Clean up** previews eligible sessions and estimated storage before confirmation. It removes sessions inactive for over 90 days, or inactive for over 30 days with at most one user message. Cleanup follows the provider filter, ignores search terms, keeps recently modified files, and reports actual bytes released, including Claude sidecars. Deletion is permanent.
+
+From the source repository, `npm run prune` previews the same cleanup; `npm run prune -- --yes` executes it.
 
 The server binds to `127.0.0.1` only. It uses port `4343` by default and tries the next available local port when needed. To select a port or avoid opening a browser automatically:
 

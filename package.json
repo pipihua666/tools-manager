@@ -27,6 +27,7 @@
     "tm": "bun run src/cli.ts",
     "web": "bun --watch run src/cli.ts web --dev --port 4343 --no-open",
     "test": "bun test",
+    "prune": "bun run scripts/prune.ts",
     "typecheck": "tsc --noEmit",
     "build": "rm -rf dist && bun run typecheck && bun build --target=bun --outfile=dist/cli.js ./src/cli.ts",
     "check": "bun run typecheck && bun test",

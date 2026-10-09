@@ -346,6 +346,12 @@ export const webAppHtml = String.raw`<!doctype html>
     .content.sessions-content { max-width: none; height: calc(100vh - 108px); height: calc(100dvh - 108px); padding-top: 18px; padding-bottom: 18px; }
     .session-shell { height: 100%; min-height: 520px; display: grid; grid-template-columns: 320px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); border: 1px solid var(--line-strong); border-top: 3px solid var(--ink); background: var(--panel); box-shadow: 0 10px 28px rgba(16, 21, 19, .08); overflow: hidden; }
     .session-sidebar { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr); border-right: 1px solid var(--line-strong); background: #f5f7f1; }
+    .session-cleanup-result { margin: 10px 0 0; color: var(--ink); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+    .prune-candidates { max-height: 260px; overflow-y: auto; margin: 16px 0 0; padding: 0 0 0 22px; font-size: 12px; }
+    .prune-candidates li { padding: 10px 0; border-top: 1px solid var(--line); }
+    .prune-candidates strong, .prune-candidates span, .prune-candidates code { display: block; overflow-wrap: anywhere; }
+    .prune-candidates span { margin-top: 4px; color: var(--muted); }
+    .prune-candidates code { margin-top: 6px; font-size: 11px; }
     .session-sidebar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 15px 16px 12px; border-bottom: 1px solid var(--line); }
     .session-sidebar-head strong { font: 700 14px/1 var(--display); text-transform: uppercase; }
     .session-count { min-width: 28px; height: 22px; display: inline-grid; place-items: center; padding: 0 7px; background: var(--graphite); color: var(--accent); font: 700 9px/1 var(--mono); }
@@ -912,17 +918,20 @@ export const webAppHtml = String.raw`<!doctype html>
 
   <dialog id="form-dialog" aria-labelledby="form-title"><form id="dynamic-form"><div class="dialog-head"><h2 id="form-title"></h2><button type="button" class="btn icon ghost" data-close aria-label="Close">&times;</button></div><div class="dialog-body" id="form-body"></div><div class="dialog-actions"><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn primary" id="form-submit">Save</button></div></form></dialog>
   <dialog id="detail-dialog" aria-labelledby="detail-title"><div class="dialog-head"><h2 id="detail-title"></h2><button type="button" class="btn icon ghost" data-close aria-label="Close">&times;</button></div><div class="dialog-body" id="detail-body"></div><div class="dialog-actions"><button type="button" class="btn" data-close>Close</button></div></dialog>
-  <dialog id="confirm-dialog" aria-labelledby="confirm-title"><div class="dialog-head"><h2 id="confirm-title">Confirm action</h2><button type="button" class="btn icon ghost" data-confirm="false" aria-label="Close">&times;</button></div><div class="dialog-body"><p class="confirm-copy" id="confirm-copy"></p></div><div class="dialog-actions"><button type="button" class="btn" data-confirm="false">Cancel</button><button type="button" class="btn danger" data-confirm="true">Confirm</button></div></dialog>
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-copy"><div class="dialog-head"><h2 id="confirm-title">Confirm action</h2><button type="button" class="btn icon ghost" data-confirm="false" aria-label="Close">&times;</button></div><div class="dialog-body"><p class="confirm-copy" id="confirm-copy"></p><div id="confirm-details"></div></div><div class="dialog-actions"><button type="button" class="btn" data-confirm="false">Cancel</button><button type="button" class="btn danger" data-confirm="true">Confirm</button></div></dialog>
   <div class="toast-region" id="toasts" aria-live="polite"></div>
   <script>
     const TOKEN = "__TM_TOKEN__";
     const DEV = __TM_DEV__;
+    const CLEANUP_LOCALE = /^zh(?:-|$)/i.test((navigator.languages && navigator.languages[0]) || navigator.language || "en") ? "zh-CN" : "en";
+    function cleanupText(english, chinese) { return CLEANUP_LOCALE === "zh-CN" ? chinese : english; }
     const TOOLS = ["all", "codex", "claude_code", "cursor", "opencode"];
     const state = {
       data: null, view: location.hash.slice(1) || "dashboard", skillFilter: "all", mcpFilter: "all", hookFilter: "codex",
       skillSearch: "", mcpSearch: "", skillSearchDraft: "", mcpSearchDraft: "", formHandler: null, confirmResolve: null,
       sessions: [], sessionsLoaded: false, sessionsLoading: false, sessionProvider: "all", sessionSearch: "", sessionSearchDraft: "",
       selectedSessionKey: "", sessionTranscript: null, sessionMessagesLoading: false, sessionsRequestId: 0, sessionMessageRequestId: 0,
+      sessionPruneBusy: false, sessionPruneResult: "",
       agentTool: "codex", agentUsage: {}, agentUsageLoading: {}, hiddenTrendSeries: [], hiddenModelSeries: []
     };
     const titles = {
@@ -1111,7 +1120,7 @@ export const webAppHtml = String.raw`<!doctype html>
       const refresh = '<button class="btn icon" data-action="refresh" aria-label="Refresh" title="Refresh">' + icon + '</button>';
       if (state.view === "skills") return refresh + '<button class="btn primary" data-action="add-skill" title="Add a managed skill" aria-label="Add a managed skill">Add</button>';
       if (state.view === "mcp") return refresh + '<button class="btn primary" data-action="add-mcp" title="Add an MCP server" aria-label="Add an MCP server">Add</button>';
-      if (state.view === "sessions") return '<button class="btn icon" data-action="refresh-sessions" aria-label="Rescan sessions" title="Rescan sessions">' + icon + '</button>';
+      if (state.view === "sessions") return '<button class="btn icon" data-action="refresh-sessions" aria-label="Rescan sessions" title="Rescan sessions">' + icon + '</button><button class="btn" data-action="prune-sessions"' + (state.sessionPruneBusy ? ' disabled aria-busy="true"' : '') + '>' + (state.sessionPruneBusy ? "Cleaning..." : "Clean up") + '</button>';
       if (state.view === "agents") return '<button class="btn icon" data-action="refresh-agent-usage" aria-label="Refresh agent usage" title="Refresh agent usage">' + icon + '</button>';
       return refresh;
     }
@@ -1336,9 +1345,9 @@ export const webAppHtml = String.raw`<!doctype html>
       return '<div class="select-shell session-agent-select"><input type="hidden" name="sessionProvider" value="' + esc(state.sessionProvider) + '"><button id="session-agent-filter" type="button" class="select-trigger" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-label="Filter sessions by Agent: ' + esc(providerLabel(state.sessionProvider)) + '" title="' + esc(providerLabel(state.sessionProvider)) + '">' + sessionProviderIcon(state.sessionProvider) + '<span class="select-label" data-select-label hidden>' + esc(providerLabel(state.sessionProvider)) + '</span></button><div class="select-menu session-agent-menu" role="listbox" aria-label="Filter sessions by Agent" hidden>' + options + '</div></div>';
     }
     function baseName(path) { return String(path || "").split(/[\\/]/).filter(Boolean).pop() || "Unknown directory"; }
-    function formatSessionTime(value) {
-      if (!value) return "Unknown time";
-      return new Intl.DateTimeFormat(undefined, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+    function formatSessionTime(value, locale) {
+      if (!value) return locale === "zh-CN" ? "时间未知" : "Unknown time";
+      return new Intl.DateTimeFormat(locale, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
     }
     function relativeSessionTime(value) {
       if (!value) return "unknown";
@@ -1374,7 +1383,7 @@ export const webAppHtml = String.raw`<!doctype html>
           }).join("") + (sessions.length > visible.length ? '<div class="session-placeholder"><span>Showing 300 of ' + sessions.length + '. Search to narrow the list.</span></div>' : '')
         : '<div class="session-placeholder"><div><strong>No sessions found</strong><span>Try another provider or search term.</span></div></div>';
       view.innerHTML = '<div class="session-shell"><aside class="session-sidebar"><div class="session-sidebar-head"><strong>Session list</strong><span class="session-count">' + sessions.length + '</span></div>' +
-        '<div class="session-controls"><div class="session-control-row"><form class="session-search" data-session-search-form><input type="search" name="query" value="' + esc(state.sessionSearchDraft) + '" placeholder="Search sessions" aria-label="Search sessions"><button type="submit" aria-label="Search" title="Search">⌕</button></form>' + sessionProviderSelect() + '</div></div>' +
+        '<div class="session-controls"><div class="session-control-row"><form class="session-search" data-session-search-form><input type="search" name="query" value="' + esc(state.sessionSearchDraft) + '" placeholder="Search sessions" aria-label="Search sessions"><button type="submit" aria-label="Search" title="Search">⌕</button></form>' + sessionProviderSelect() + '</div>' + (state.sessionPruneResult ? '<p class="session-cleanup-result" role="status">' + esc(state.sessionPruneResult) + '</p>' : '') + '</div>' +
         '<div class="session-list">' + list + '</div></aside>' + renderSessionWorkspace(selected) + '</div>';
     }
     function renderSessionWorkspace(session) {
@@ -1478,6 +1487,53 @@ export const webAppHtml = String.raw`<!doctype html>
       } catch (error) {
         await copyText(session.resumeCommand, "Terminal could not be opened. Resume command copied.");
       } finally { setButtonLoading(button, false); }
+    }
+    function formatStorageBytes(bytes) {
+      if (bytes < 1024) return bytes + " B";
+      const units = ["KiB", "MiB", "GiB", "TiB"];
+      let value = bytes / 1024;
+      let index = 0;
+      while (value >= 1024 && index < units.length - 1) { value /= 1024; index += 1; }
+      return value.toFixed(2) + " " + units[index];
+    }
+    async function pruneSessionHistory() {
+      if (state.sessionPruneBusy) return;
+      state.sessionPruneBusy = true;
+      document.getElementById("top-actions").innerHTML = topActions();
+      let confirmButton;
+      try {
+        const provider = state.sessionProvider;
+        const preview = await api("/api/sessions/prune-preview?provider=" + encodeURIComponent(provider));
+        if (!preview.count) {
+          state.sessionPruneResult = cleanupText("No sessions eligible for cleanup. Released 0 B.", "没有符合清理条件的对话，释放 0 B。") + (preview.skippedCount ? cleanupText(" " + preview.skippedCount + " unreadable sessions skipped.", "已跳过 " + preview.skippedCount + " 条无法读取的对话。") : "");
+          renderSessions();
+          toast(state.sessionPruneResult);
+          return;
+        }
+        const cleanupList = '<ol class="prune-candidates" aria-label="' + esc(cleanupText("Sessions and files to delete", "待清理对话和文件")) + '">' + preview.candidates.map(function(candidate) {
+          const reason = candidate.reason === "inactive" ? cleanupText("Inactive for over 90 days", "超过 90 天未活跃") : cleanupText("Inactive for over 30 days with at most one user message", "超过 30 天未活跃，且仅有 0–1 条用户消息");
+          return '<li><strong>' + esc(candidate.title || candidate.sessionId) + '</strong><span>' + esc(providerLabel(candidate.provider)) + ' · ' + esc(formatStorageBytes(candidate.bytes)) + ' · ' + esc(cleanupText("Last active: ", "最后活跃：")) + esc(formatSessionTime(candidate.lastActiveAt, CLEANUP_LOCALE)) + '</span><span>' + esc(cleanupText("Reason: ", "清理原因：")) + esc(reason) + '</span><span>' + esc(cleanupText("Session ID: ", "会话 ID：")) + esc(candidate.sessionId) + '</span>' + candidate.dataPaths.map(function(path) { return '<code>' + esc(path) + '</code>'; }).join("") + '</li>';
+        }).join("") + '</ol>';
+        const cleanupCopy = cleanupText("Permanently delete the " + preview.count + " sessions listed below and release approximately " + formatStorageBytes(preview.estimatedBytes) + ".\nScope: all eligible sessions for " + (provider === "all" ? "all providers" : providerLabel(provider)) + ", regardless of the current search.\n\nRules: inactive for over 90 days; or inactive for over 30 days with at most one user message. The 90-day rule also includes longer conversations and does not assess their value.\n\nWill delete: complete conversation logs, including messages, tool calls and usage records stored in those logs. For Claude, the matching sidecar directory and its contents (such as subagent logs and tool outputs) will also be deleted. Exact paths are listed below.\nWill keep: project code, skills, MCP and hooks configuration, and conversations outside this list. Sessions updated after this preview will be skipped.\n\nDeletion is permanent. These sessions cannot be restored or resumed, and usage statistics based on these logs will decrease." + (preview.skippedCount ? "\n" + preview.skippedCount + " unreadable sessions were skipped." : ""), "将永久删除下方列出的 " + preview.count + " 条对话，预计释放 " + formatStorageBytes(preview.estimatedBytes) + "。\n范围：" + (provider === "all" ? "所有 Agent" : providerLabel(provider)) + " 的所有符合条件的对话，不受当前搜索词限制。\n\n清理规则：超过 90 天未活跃；或超过 30 天未活跃且仅有 0–1 条用户消息。90 天规则也会清理较长对话，并不判断内容价值。\n\n会删除：完整对话日志（包括消息、工具调用和日志中的用量记录）；Claude 对话还会删除同名附属目录及其中的子代理记录、工具输出等文件。具体路径见下方清单。\n会保留：项目代码、skills、MCP 和 hooks 配置，以及清单之外的对话。预览后更新过的对话会跳过。\n\n删除后无法恢复，也无法继续这些对话；基于这些日志的用量统计会相应减少。" + (preview.skippedCount ? "\n另有 " + preview.skippedCount + " 条无法读取的对话已跳过。" : ""));
+        confirmButton = await confirmAction(cleanupText("Delete these sessions permanently?", "确认清理这些对话？"), cleanupCopy, cleanupList, "Permanently delete " + preview.count + " sessions", CLEANUP_LOCALE);
+        if (!confirmButton) return;
+        setButtonLoading(confirmButton, true, "Cleaning...");
+        const result = await api("/api/sessions/prune", { method: "POST", body: JSON.stringify({ planId: preview.planId }) });
+        document.getElementById("confirm-dialog").close();
+        state.sessionPruneResult = cleanupText("Deleted " + result.deletedCount + " sessions. Released " + formatStorageBytes(result.freedBytes) + ".", "已删除 " + result.deletedCount + " 条对话，释放 " + formatStorageBytes(result.freedBytes) + "。") + (result.skippedCount ? cleanupText(" " + result.skippedCount + " changed sessions kept.", "已保留 " + result.skippedCount + " 条有更新的对话。") : "") + (result.errors.length ? cleanupText(" " + result.errors.length + " sessions could not be fully cleaned; try again.", result.errors.length + " 条对话未能完整清理，请重试。") : "");
+        state.agentUsage = {};
+        state.sessionTranscript = null;
+        state.sessionMessageRequestId += 1;
+        await loadSessions();
+        toast(state.sessionPruneResult, Boolean(result.errors.length));
+      } catch (error) {
+        document.getElementById("confirm-dialog").close();
+        toast(cleanupText(error.message, "清理失败，请重试。错误详情：" + error.message), true);
+      } finally {
+        setButtonLoading(confirmButton, false);
+        state.sessionPruneBusy = false;
+        document.getElementById("top-actions").innerHTML = topActions();
+      }
     }
     async function deleteSelectedSession() {
       const session = selectedSession();
@@ -1988,10 +2044,15 @@ export const webAppHtml = String.raw`<!doctype html>
       const body = '<dl class="detail-meta"><dt>Agent</dt><dd>' + esc(toolLabel(tool)) + '</dd><dt>Sync</dt><dd><span class="tag amber">not synced</span></dd><dt>Access</dt><dd><span class="tag amber">read only</span></dd><dt>Path</dt><dd class="mono">' + esc(agent.mcpPath) + '</dd><dt>Endpoint</dt><dd class="mono">' + esc(endpoint) + '</dd></dl><pre>' + esc(JSON.stringify(config, null, 2)) + '</pre>';
       openDetail(server.name, body);
     }
-    function confirmAction(title, copy) {
+    function confirmAction(title, copy, details, confirmLabel, language) {
       document.getElementById("confirm-title").textContent = title;
       document.getElementById("confirm-copy").textContent = copy;
+      document.getElementById("confirm-details").innerHTML = details || "";
       const dialog = document.getElementById("confirm-dialog");
+      dialog.lang = language || "en";
+      dialog.querySelector('.dialog-actions [data-confirm="false"]').textContent = "Cancel";
+      dialog.querySelector('.dialog-head [data-confirm="false"]').setAttribute("aria-label", "Close");
+      dialog.querySelector('.dialog-actions [data-confirm="true"]').textContent = confirmLabel || "Confirm";
       dialog.showModal();
       requestAnimationFrame(function() { dialog.querySelector('.dialog-actions [data-confirm="false"]')?.focus(); });
       return new Promise(function(resolve) { state.confirmResolve = resolve; });
@@ -2146,6 +2207,7 @@ export const webAppHtml = String.raw`<!doctype html>
       if (action === "refresh") await load(target);
       if (action === "refresh-agent-usage") await loadAgentUsage(state.agentTool, true);
       if (action === "refresh-sessions") await loadSessions(target);
+      if (action === "prune-sessions") await pruneSessionHistory();
       if (action === "select-session") {
         event.preventDefault();
         state.selectedSessionKey = target.dataset.sessionKey;
