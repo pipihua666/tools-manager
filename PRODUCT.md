@@ -24,7 +24,7 @@ Users work locally while configuring and maintaining AI-agent environments. The 
 
 ## Capabilities and Constraints
 
-The product manages agent skills, MCP servers, hooks, and sessions. The dashboard binds to the local loopback interface; its data and agent configuration are managed locally.
+The product manages agent skills, MCP servers, hooks, sessions, and local port processes. Port management supports macOS/Linux with lsof and requires confirmation before stopping a process. The dashboard binds to the local loopback interface; its data and agent configuration are managed locally.
 
 ## Evidence on Hand
 

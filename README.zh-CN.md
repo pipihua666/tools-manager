@@ -85,6 +85,7 @@ tm web
 * MCP environment 与 header 值只通过本地详情接口读取，管理台 snapshot 不会暴露这些值。
 * Hooks 页面按 Agent 和生命周期事件展示已安装/已启用的 handler；可编辑 Codex 用户 hooks、Claude Code hooks 与 Cursor hooks，也可启停已由 Codex 审查信任的插件 hook，插件定义和 OpenCode 插件事件保持只读。
 * Sessions 支持扫描 Codex 和 Claude Code 历史会话，并提供 Provider 筛选、搜索、按需查看正文、恢复命令和带校验的删除操作。
+* Ports 展示当前用户可见的 TCP 监听端口、UDP 绑定端口及进程信息，支持按端口、PID 或进程搜索。Stop 操作会先确认程序路径、进程和受影响的端口，再发送 SIGTERM 请求正常退出；管理台自身和其他用户的进程不可停止。提示语跟随浏览器语言，按钮保持英文。此功能支持 macOS/Linux，依赖 `lsof`。
 * Sessions 右上角的 **Clean up** 按钮会预览清理数量和预计释放空间，确认后删除超过 90 天未活跃、或超过 30 天未活跃且仅有 0–1 条用户消息的会话。清理范围跟随 Provider 筛选（不受搜索词影响）；最近修改过的文件会保留，完成后显示实际释放空间，包含 Claude 会话附属文件。删除不可恢复。
 
 源码仓库中也可运行 `npm run prune` 预览，使用 `npm run prune -- --yes` 执行相同规则的清理。

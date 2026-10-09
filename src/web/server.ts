@@ -34,6 +34,7 @@ import {
 import { backup } from "../core/backup";
 import { deleteSession, getAgentUsage, launchSession, listSessions, loadSessionMessages, parseSessionProvider } from "../core/session";
 import { previewSessionPrune, pruneSessions, SESSION_PRUNE_RULES, type SessionPrunePreview } from "../core/session-prune";
+import { listPortProcesses, previewPortStop, stopPortProcess } from "../core/ports";
 import { getAgentHooks, listAgentHooks, updateAgentHooks, updateCodexHookState } from "../core/hook";
 import { toolAdapters } from "../core/tools";
 import { webAppHtml } from "./app";
@@ -54,6 +55,7 @@ type JsonRecord = Record<string, unknown>;
 
 const MAX_BODY_BYTES = 1024 * 1024;
 const prunePlans = new Map<string, { id: string; expiresAt: number; preview: SessionPrunePreview }>();
+const portStopPlans = new Map<string, { id: string; targetId: string; expiresAt: number }>();
 
 export async function startWebDashboard(options: WebServerOptions = {}): Promise<void> {
   await initManager();
@@ -130,6 +132,26 @@ async function handleRequest(request: Request, token: string, hostname: string, 
   }
 
   try {
+    if (request.method === "GET" && url.pathname === "/api/ports") {
+      return json({ ports: await listPortProcesses() });
+    }
+    if (request.method === "POST" && url.pathname === "/api/ports/stop-preview") {
+      const body = await readBody(request);
+      const preview = await previewPortStop(requiredString(body, "id"));
+      const planId = randomUUID();
+      for (const [owner, plan] of portStopPlans) if (plan.expiresAt < Date.now()) portStopPlans.delete(owner);
+      portStopPlans.set(token, { id: planId, targetId: preview.target.id, expiresAt: Date.now() + 5 * 60 * 1000 });
+      return json({ planId, ...preview });
+    }
+    if (request.method === "POST" && url.pathname === "/api/ports/stop") {
+      const body = await readBody(request);
+      const plan = portStopPlans.get(token);
+      if (!plan || plan.id !== requiredString(body, "planId") || plan.expiresAt < Date.now()) {
+        throw new Error("Stop preview expired. Refresh the list and confirm again.");
+      }
+      portStopPlans.delete(token);
+      return json(await stopPortProcess(plan.targetId));
+    }
     if (request.method === "GET" && url.pathname === "/api/snapshot") return json(await snapshot());
     if (request.method === "GET" && url.pathname === "/api/sessions") {
       const providerValue = url.searchParams.get("provider");

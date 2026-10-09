@@ -906,6 +906,7 @@ export const webAppHtml = String.raw`<!doctype html>
         <button data-view="mcp"><span class="nav-code">04</span><span>MCP Servers</span></button>
         <button data-view="hooks"><span class="nav-code">05</span><span>Hooks</span></button>
         <button data-view="sessions"><span class="nav-code">06</span><span>Sessions</span></button>
+        <button data-view="ports"><span class="nav-code">07</span><span>Ports</span></button>
       </nav>
       <div class="sidebar-foot"><div class="connection-line"><span class="status-pulse"></span><span>LOCAL SESSION</span></div><div id="server-address"></div></div>
     </aside>
@@ -932,6 +933,7 @@ export const webAppHtml = String.raw`<!doctype html>
       sessions: [], sessionsLoaded: false, sessionsLoading: false, sessionProvider: "all", sessionSearch: "", sessionSearchDraft: "",
       selectedSessionKey: "", sessionTranscript: null, sessionMessagesLoading: false, sessionsRequestId: 0, sessionMessageRequestId: 0,
       sessionPruneBusy: false, sessionPruneResult: "",
+      ports: [], portsLoaded: false, portsLoading: false, portsError: "", portSearch: "", portSearchDraft: "", portStopBusy: false,
       agentTool: "codex", agentUsage: {}, agentUsageLoading: {}, hiddenTrendSeries: [], hiddenModelSeries: []
     };
     const titles = {
@@ -940,7 +942,8 @@ export const webAppHtml = String.raw`<!doctype html>
       skills: ["Managed resources", "Skills"],
       mcp: ["Managed integrations", "MCP Servers"],
       hooks: ["Agent automation", "Hooks"],
-      sessions: ["Local conversation history", "Sessions"]
+      sessions: ["Local conversation history", "Sessions"],
+      ports: ["Local processes and listening ports", "Ports"]
     };
 
     const view = document.getElementById("view");
@@ -1110,6 +1113,7 @@ export const webAppHtml = String.raw`<!doctype html>
       if (state.view === "mcp") renderMcp();
       if (state.view === "hooks") renderHooks();
       if (state.view === "sessions") renderSessions();
+      if (state.view === "ports") renderPorts();
       view.classList.toggle("sessions-content", state.view === "sessions");
     }
     function refreshIcon() {
@@ -1122,6 +1126,7 @@ export const webAppHtml = String.raw`<!doctype html>
       if (state.view === "mcp") return refresh + '<button class="btn primary" data-action="add-mcp" title="Add an MCP server" aria-label="Add an MCP server">Add</button>';
       if (state.view === "sessions") return '<button class="btn icon" data-action="refresh-sessions" aria-label="Rescan sessions" title="Rescan sessions">' + icon + '</button><button class="btn" data-action="prune-sessions"' + (state.sessionPruneBusy ? ' disabled aria-busy="true"' : '') + '>' + (state.sessionPruneBusy ? "Cleaning..." : "Clean up") + '</button>';
       if (state.view === "agents") return '<button class="btn icon" data-action="refresh-agent-usage" aria-label="Refresh agent usage" title="Refresh agent usage">' + icon + '</button>';
+      if (state.view === "ports") return '<button class="btn icon" data-action="refresh-ports" aria-label="Refresh ports" title="Refresh ports"' + (state.portsLoading ? ' disabled aria-busy="true"' : '') + '>' + icon + '</button>';
       return refresh;
     }
     function metrics() {
@@ -1487,6 +1492,76 @@ export const webAppHtml = String.raw`<!doctype html>
       } catch (error) {
         await copyText(session.resumeCommand, "Terminal could not be opened. Resume command copied.");
       } finally { setButtonLoading(button, false); }
+    }
+    function renderPorts() {
+      if (state.view !== "ports") return;
+      if (!state.portsLoaded && !state.portsLoading && !state.portsError) { void loadPorts(); return; }
+      const query = state.portSearch.trim().toLowerCase();
+      const ports = state.ports.filter(function(entry) {
+        return [entry.port, entry.pid, entry.command, entry.executable, entry.address, entry.protocol].some(function(value) { return String(value).toLowerCase().includes(query); });
+      });
+      const intro = cleanupText("TCP listening ports and UDP bound ports visible to the current user. Stopping a process can affect all of its ports.", "显示当前用户可见的 TCP 监听端口和 UDP 绑定端口。停止进程可能影响它占用的所有端口。");
+      const toolbar = sectionHead("Port activity", intro) + '<div class="resource-controls"><form class="resource-search-form" data-port-search-form><input class="resource-search" data-port-search type="search" name="query" value="' + esc(state.portSearchDraft) + '" placeholder="Search port, PID or process" aria-label="Search ports"><button class="btn" type="submit">Search</button></form></div>';
+      let body;
+      if (state.portsLoading) body = empty("Loading ports", cleanupText("Reading local port activity…", "正在读取本机端口运行情况…"));
+      else if (state.portsError) body = empty("Unable to read ports", state.portsError);
+      else if (!ports.length) body = empty("No ports found", cleanupText("No matching listening or bound ports. Refresh to scan again.", "没有匹配的监听或绑定端口，可以刷新后再查看。"));
+      else body = '<div class="table-wrap mobile-table-wrap"><table><thead><tr><th>Port</th><th>Protocol / State</th><th>Address</th><th>Process / PID</th><th>Actions</th></tr></thead><tbody>' + ports.map(function(entry) {
+        const reason = entry.protectedReason === "dashboard" ? cleanupText("The dashboard process cannot stop itself.", "管理台进程不能停止自身。") : entry.protectedReason === "other-user" ? cleanupText("This process belongs to another user.", "该进程属于其他用户。") : cleanupText("This system process is protected.", "该系统进程受到保护。");
+        return '<tr><td data-label="Port" class="mono">' + entry.port + '</td><td data-label="Protocol / State"><span class="tag green">' + esc(entry.protocol) + '</span> ' + (entry.protocol === "TCP" ? 'Listening' : 'Bound') + '</td><td data-label="Address" class="mono">' + esc(entry.address) + '</td><td data-label="Process / PID"><strong>' + esc(entry.command) + '</strong><div class="muted mono">PID ' + entry.pid + '</div><div class="truncate muted" title="' + esc(entry.executable) + '">' + esc(entry.executable) + '</div></td><td data-label="Actions"><button class="btn danger" data-action="stop-port" data-port-id="' + esc(entry.id) + '"' + (!entry.canStop || state.portStopBusy ? ' disabled' : '') + ' title="' + esc(entry.canStop ? cleanupText("Preview and confirm before stopping this process", "预览并确认后停止该进程") : reason) + '">Stop</button>' + (!entry.canStop ? '<div class="muted">' + esc(reason) + '</div>' : '') + '</td></tr>';
+      }).join("") + '</tbody></table></div>';
+      view.innerHTML = toolbar + body;
+    }
+    async function loadPorts() {
+      if (state.portsLoading) return;
+      state.portsLoading = true;
+      state.portsError = "";
+      if (state.view === "ports") { renderPorts(); document.getElementById("top-actions").innerHTML = topActions(); }
+      try {
+        const payload = await api("/api/ports");
+        state.ports = payload.ports;
+        state.portsLoaded = true;
+      } catch (error) {
+        state.portsError = cleanupText(error.message, "无法读取端口，请重试。错误详情：" + error.message);
+      } finally {
+        state.portsLoading = false;
+        if (state.view === "ports") { renderPorts(); document.getElementById("top-actions").innerHTML = topActions(); }
+      }
+    }
+    async function stopPortApplication(id) {
+      if (state.portStopBusy) return;
+      state.portStopBusy = true;
+      renderPorts();
+      let confirmButton;
+      try {
+        const preview = await api("/api/ports/stop-preview", { method: "POST", body: JSON.stringify({ id: id }) });
+        const target = preview.target;
+        const affected = preview.affected.map(function(entry) { return entry.protocol + " " + entry.address + ":" + entry.port; }).join("\n");
+        const copy = cleanupText(
+          "Stop " + target.command + " (PID " + target.pid + ")?\nExecutable: " + target.executable + "\n\nAll ports used by this process may close, including:\n" + affected + "\n\nThe application will receive SIGTERM to request a graceful shutdown. Connections and running tasks may be interrupted, and unsaved work may be lost. A supervising service may restart it. This does not delete application files. The process identity will be checked again before stopping.",
+          "确认停止 " + target.command + "（PID " + target.pid + "）？\n程序路径：" + target.executable + "\n\n该进程占用的所有端口都可能关闭，包括：\n" + affected + "\n\n将向应用发送 SIGTERM，请求正常退出。现有连接和运行中的任务可能中断，未保存的内容可能丢失；如果应用由守护服务管理，也可能自动重启。此操作不会删除应用文件。执行前会再次核对进程身份。"
+        );
+        confirmButton = await confirmAction(cleanupText("Confirm stop process", "确认停止进程"), copy, "", "Stop process", CLEANUP_LOCALE);
+        if (!confirmButton) return;
+        setButtonLoading(confirmButton, true, "Stopping...");
+        const result = await api("/api/ports/stop", { method: "POST", body: JSON.stringify({ planId: preview.planId }) });
+        document.getElementById("confirm-dialog").close();
+        const message = !result.stopped
+          ? cleanupText("Stop requested, but the listener is still active. Refresh to check again.", "已请求停止，但端口仍在运行。请刷新查看后续状态。")
+          : result.portsReleased
+          ? cleanupText("Process " + result.pid + " stopped listening. Its ports are released.", "进程 " + result.pid + " 已停止监听，相关端口已释放。")
+          : cleanupText("The original listener stopped, but one or more ports are still in use, possibly after an automatic restart.", "原进程已停止监听，但部分端口仍被占用，应用可能已自动重启。");
+        toast(message, !result.stopped);
+        await loadPorts();
+      } catch (error) {
+        document.getElementById("confirm-dialog").close();
+        toast(cleanupText(error.message, "停止失败，请刷新后重新确认。错误详情：" + error.message), true);
+        await loadPorts();
+      } finally {
+        setButtonLoading(confirmButton, false);
+        state.portStopBusy = false;
+        renderPorts();
+      }
     }
     function formatStorageBytes(bytes) {
       if (bytes < 1024) return bytes + " B";
@@ -2208,6 +2283,8 @@ export const webAppHtml = String.raw`<!doctype html>
       if (action === "refresh-agent-usage") await loadAgentUsage(state.agentTool, true);
       if (action === "refresh-sessions") await loadSessions(target);
       if (action === "prune-sessions") await pruneSessionHistory();
+      if (action === "refresh-ports") await loadPorts();
+      if (action === "stop-port") await stopPortApplication(target.dataset.portId);
       if (action === "select-session") {
         event.preventDefault();
         state.selectedSessionKey = target.dataset.sessionKey;
@@ -2271,11 +2348,21 @@ export const webAppHtml = String.raw`<!doctype html>
     document.addEventListener("scroll", closeSelectMenus, true);
     document.addEventListener("input", function(event) {
       const input = event.target;
+      if (input.hasAttribute("data-port-search")) { state.portSearchDraft = input.value; return; }
       const kind = input.dataset.resourceSearch;
       if (!kind) return;
       state[kind + "SearchDraft"] = input.value;
     });
     document.addEventListener("submit", function(event) {
+      const portForm = event.target.closest?.("[data-port-search-form]");
+      if (portForm) {
+        event.preventDefault();
+        state.portSearchDraft = String(new FormData(portForm).get("query") || "");
+        state.portSearch = state.portSearchDraft;
+        renderPorts();
+        document.querySelector("[data-port-search-form] input")?.focus();
+        return;
+      }
       const sessionForm = event.target.closest?.("[data-session-search-form]");
       if (sessionForm) {
         event.preventDefault();
