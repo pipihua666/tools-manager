@@ -34,6 +34,14 @@ npm install -g tools-manager
 tm status
 ```
 
+将全局安装的 CLI 更新到最新发布版本：
+
+```bash
+tm update
+```
+
+该命令执行 `npm install --global tools-manager@latest`，沿用 npm 的 registry 和全局安装路径配置。需要 npm 可用，且对全局安装目录有写入权限。不会修改已管理的 skills、MCP 记录和配置。更新的是全局安装的包，而非源码检出目录。
+
 如果是源码检出方式使用，见 [开发](#开发)。
 
 ## 快速开始
@@ -319,6 +327,7 @@ tm backup
 tm init
 tm web [--port <port>] [--no-open] [--dev]
 tm status [--json]
+tm update [--json]
 tm agents list [--tool <tool|all>] [--json]
 tm skills add <source>
 tm skills add --tool <tool|all>

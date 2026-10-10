@@ -34,6 +34,14 @@ Verify the CLI:
 tm status
 ```
 
+Update the globally installed CLI to the latest published version:
+
+```bash
+tm update
+```
+
+This runs `npm install --global tools-manager@latest` using your npm registry and global prefix settings. npm must be available, and the global installation directory must be writable. Managed skills, MCP records, and configuration are not changed. This updates the global package, not a source checkout.
+
 For source checkout usage, see [Development](#development).
 
 ## Quick Start
@@ -319,6 +327,7 @@ tm backup
 tm init
 tm web [--port <port>] [--no-open] [--dev]
 tm status [--json]
+tm update [--json]
 tm agents list [--tool <tool|all>] [--json]
 tm skills add <source>
 tm skills add --tool <tool|all>

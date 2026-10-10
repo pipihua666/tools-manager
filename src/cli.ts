@@ -5,6 +5,7 @@ import { addAllLocalAgentSkills, addCodexSkills, addLocalAgentSkills, addSkill, 
 import { addMcpServer, getMcpServer, importMcpFromTools, listMcpServers, listToolMcpServers, removeMcpServer, syncMcp, syncMcpServer, type McpServer } from "./core/mcp";
 import { listAgentOverview } from "./core/agent";
 import { backup } from "./core/backup";
+import { updateCli } from "./core/update";
 import { closeDb } from "./core/db";
 import { heading, note, printJson, success, table, withLoading } from "./core/output";
 import { UsageError, assertUsage } from "./core/errors";
@@ -42,6 +43,9 @@ async function main(): Promise<void> {
     case "status":
       await cmdStatus(global);
       break;
+    case "update":
+      await cmdUpdate(argv, global);
+      break;
     case "agents":
       await cmdAgents(argv, global);
       break;
@@ -73,6 +77,7 @@ function runWithLoading<T>(global: GlobalOptions, message: string, action: () =>
 const menuCommands: MenuCommand[] = [
   { group: "System", label: "Status", description: "Paths, counts, and detected agents.", argv: ["status"] },
   { group: "System", label: "Open web dashboard", description: "Manage tools in a local browser.", argv: ["web"] },
+  { group: "System", label: "Update Tools Manager", description: "Install the latest CLI version via npm.", argv: ["update"] },
   { group: "Agents", label: "List agent-side contents", description: "Show skills and MCP currently in agents.", argv: ["agents", "list", "--tool", "$tool?"] },
   { group: "Skills", label: "Add skill from source", description: "Import a local path or Git URL.", argv: ["skills", "add", "$source"] },
   { group: "Skills", label: "Import skills from agent", description: "Copy agent-side skills into tm.", argv: ["skills", "add", "--tool", "$tool?"] },
@@ -110,6 +115,9 @@ async function interactiveMenu(global: GlobalOptions): Promise<void> {
       switch (command) {
         case "status":
           await cmdStatus(global);
+          break;
+        case "update":
+          await cmdUpdate(argv, global);
           break;
         case "agents":
           await cmdAgents(argv, global);
@@ -579,6 +587,13 @@ function validateMcpUrl(value: string): void {
   if (url.protocol !== "http:" && url.protocol !== "https:") throw new UsageError("MCP URL must use http:// or https://.");
 }
 
+async function cmdUpdate(argv: string[], global: GlobalOptions): Promise<void> {
+  assertUsage(argv.length === 0, "Usage: tm update [--json]");
+  await runWithLoading(global, "Updating Tools Manager to the latest version...", updateCli);
+  if (global.json) return printJson({ updated: true, package: "tools-manager", tag: "latest" });
+  success("Updated Tools Manager to the latest version.");
+}
+
 async function cmdBackup(global: GlobalOptions): Promise<void> {
   const result = await runWithLoading(global, "Backing up managed skills...", backup);
   if (global.json) return printJson(result);
@@ -962,6 +977,7 @@ function printHelp(): void {
   tm init
   tm web [--port <port>] [--no-open] [--dev]
   tm status [--json]
+  tm update [--json]
   tm agents list [--tool <tool|all>] [--json]
   tm skills add <source>
   tm skills add --tool <tool|all>
